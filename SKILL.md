@@ -1,6 +1,6 @@
 ---
 name: deep-learning-lab
-description: Explain deep learning concepts through beginner-friendly interactive experiments with linked visuals, real numerical calculations, and small prediction exercises. Use for neural network space folding (剪窗花), gradients, convolution, or designing a visual explanation of another algorithm. Does not cover production training pipelines or model deployment.
+description: Explain deep learning through beginner-friendly interactive experiments, network animations, real numerical calculations, and prediction exercises. Use for space folding (剪窗花), gradients, convolution, CNN, ResNet, Transformer attention, or designing another algorithm visualization. Does not cover production training pipelines or model deployment.
 license: MIT
 ---
 
@@ -15,6 +15,9 @@ For a bundled topic, read only its relevant section in [lessons.md](references/l
 - Space folding, ReLU, expressivity, or “剪窗花”: topic `fold`.
 - Learning rate, gradients, convergence, or oscillation: topic `gradient`.
 - Convolution, kernels, padding, stride, or receptive fields: topic `convolution`.
+- Layer-by-layer convolutional feature extraction: topic `cnn`.
+- Residual branches, skip connections, or identity mappings: topic `resnet`.
+- Self-attention, token mixing, or causal visibility: topic `transformer`.
 
 Export a portable copy of the lab:
 
@@ -23,6 +26,10 @@ python <skill-dir>/scripts/export_lab.py --output <new-absolute-directory> --top
 ```
 
 Use the host's output-location instructions. The script creates a new directory and preserves existing work by refusing an occupied destination. Its output has no runtime package, network, GPU, server, or API-key dependencies. Open the exported `index.html` with the host's file/browser tool when possible, and link to that file.
+
+Network animations use small fixed-weight forward passes, not trained or full-size production models. Explain the simplifications stated in the selected lesson. Start paused and let the learner step through; preserve reduced-motion behavior and stop playback when leaving the lesson.
+
+For learners who want code, use `python/deep_learning_lab.py`, a standard-library implementation of the three foundational models. Run `python <skill-dir>/python/deep_learning_lab.py --topic gradient`; `--help` lists controls and `--json` returns intermediate results. Exported copies include this source. The browser still computes in JavaScript. On-page Python snippets are read-only illustrations; the separate foundational examples are independently runnable and checked against browser results.
 
 For an algorithm without a bundled experiment, read [authoring.md](references/authoring.md). Create the requested experiment in the user's output or project directory; the installed skill is a reusable source, so edit it only when asked to update the skill itself. The bundled experiments are starting points, not an exhaustive algorithm catalog.
 

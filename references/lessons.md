@@ -1,6 +1,6 @@
 # Bundled experiments: exact models and teaching boundaries
 
-Read the section for the selected topic. All model functions live in `assets/lab/core.js`; the UI calls those functions rather than maintaining separate display math.
+Read the section for the selected topic. Foundational models live in `assets/lab/core.js`, and network forward passes in `assets/lab/network-model.js`. Views inspect actual model outputs rather than maintaining separate display math.
 
 ## Space folding (`fold`)
 
@@ -65,3 +65,31 @@ Kernel options are a vertical edge detector, a 1/9 mean kernel, and a sharpening
 Exercise: predict the output shape for stride 2 and padding 1, then inspect the bottom-right output and the nine displayed products.
 
 Sources: [Convolutions for Images](https://d2l.ai/chapter_convolutional-neural-networks/conv-layer.html), [Padding and Stride](https://d2l.ai/chapter_convolutional-neural-networks/padding-and-strides.html), Dive into Deep Learning.
+
+## Network animations (`cnn`, `resnet`, `transformer`)
+
+All three use deterministic, small, hand-written weights and perform no training. Stage shapes, feature maps, and values come from the actual forward pass. Playback follows those stages, stops at the end, and pauses when the lesson is left. Python panels are for reading only.
+
+### CNN
+
+An 8 × 8 single-channel image passes through a 3 × 3 valid correlation, ReLU, 2 × 2 pooling, aggregation, and a small output readout. Inspect how negative activations are suppressed and spatial resolution changes. Output scores illustrate a readout, not learned recognition accuracy. This is a small construction, not a complete LeNet reproduction.
+
+Reference: [PyTorch's CNN tutorial](https://docs.pytorch.org/tutorials/beginner/blitz/neural_networks_tutorial.html).
+
+### ResNet
+
+Trace a small vector through a residual branch F(x) and inspect the sum x + F(x). Turning off the skip shows F(x) alone; setting F(x) to zero while retaining the skip demonstrates identity. The illustration omits normalization and a post-add activation so the addition can be inspected directly.
+
+Exercise: predict the output with a zero residual, then toggle the skip connection. Do not imply that the full architecture is simply identity or that arbitrary extra layers always improve accuracy.
+
+Reference: [He et al., Deep Residual Learning for Image Recognition](https://arxiv.org/abs/1512.03385).
+
+### Transformer
+
+Three tokens with four-dimensional representations pass through positional encoding, Q/K/V projections, scaled dot-product attention, value mixing, projection, residual/normalization, and a feed-forward block. Inspect one query row of the attention matrix. With a causal mask, weights to later positions become zero while the allowed row remains normalized.
+
+This is a single-head teaching block with fixed weights, not a complete language model. A mask toggle illustrates visibility; it does not turn the example into a full decoder. Layer normalization uses a small epsilon for stability. Values need not represent meaningful linguistic relationships.
+
+Exercise: select the first query, enable masking, and explain why only its own position remains visible.
+
+Reference: [Vaswani et al., Attention Is All You Need](https://arxiv.org/abs/1706.03762).

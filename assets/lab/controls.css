@@ -1,0 +1,25 @@
+/* Deliberate native-button choices, styled consistently with the lab. */
+.controls-panel.conv-controls { display: flex; flex-direction: column; gap: 20px; padding: 20px 16px; }
+.conv-controls .panel-label { margin: 0; }
+.conv-field { border: 0; padding: 0; margin: 0; min-width: 0; }
+.conv-field legend { padding: 0; margin-bottom: 10px; font-size: 13px; font-weight: 500; }
+.param-symbol { color: var(--muted); font-family: Consolas, monospace; font-weight: 400; margin-left: 5px; }
+.kernel-options { display: grid; gap: 8px; }
+.kernel-option { display: flex; align-items: center; justify-content: space-between; gap: 8px; width: 100%; padding: 11px 12px; border: 1px solid var(--line); border-radius: 10px; background: var(--input-bg); text-align: left; color: var(--ink); }
+.kernel-option strong { display: block; font-size: 13px; font-weight: 500; }
+.kernel-option small { display: block; font-size: 12px; line-height: 1.55; color: var(--muted); margin-top: 3px; }
+.kernel-check { color: var(--accent); visibility: hidden; flex-shrink: 0; font-size: 15px; }
+.kernel-option[aria-pressed="true"] { border-color: var(--accent-fill); background: var(--accent-soft); }
+.kernel-option[aria-pressed="true"] .kernel-check { visibility: visible; }
+.segmented-control { display: flex; gap: 5px; background: var(--input-bg); padding: 5px; border: 1px solid var(--line); border-radius: 10px; }
+.segmented-control button { min-width: 0; flex: 1; background: transparent; border: 1px solid transparent; color: var(--muted); border-radius: 7px; min-height: 36px; padding: 7px 5px; font-size: 12px; }
+.segmented-control button[aria-pressed="true"] { background: var(--accent-soft); border-color: var(--accent-fill); color: var(--ink); }
+.kernel-option:hover, .segmented-control button:hover { border-color: var(--accent); }
+.conv-scan { display: grid; gap: 9px; border-top: 1px solid var(--line); padding-top: 17px; }
+.conv-scan > span { font-size: 12px; color: var(--muted); }
+.conv-scan output { font-size: 12px; line-height: 1.8; overflow-wrap: anywhere; }
+.conv-actions { display: grid; gap: 11px; }
+.conv-actions .button { display: flex; align-items: center; justify-content: center; gap: 14px; width: 100%; min-height: 44px; padding: 10px; line-height: 1.6; font-size: 13px; }
+.conv-controls .hint { margin: 0; font-size: 12px; }
+@media(max-width:620px) { .controls-panel.conv-controls { gap: 18px; padding: 19px; } }
+@media(pointer:coarse) { .segmented-control button { min-height: 44px; } }

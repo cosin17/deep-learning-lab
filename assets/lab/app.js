@@ -1,12 +1,15 @@
 (function () {
   'use strict';
   const M = window.DLLab;
-  const topics = ['fold', 'gradient', 'convolution'];
+  const topics = ['fold', 'gradient', 'convolution', 'cnn', 'resnet', 'transformer'];
+  const networkTopics = ['cnn', 'resnet', 'transformer'];
+  let networkController = null;
   const params = new URLSearchParams(location.search);
   const language = params.get('lang') || document.documentElement.dataset.initialLanguage;
   const initialTopic = location.hash.slice(1) || params.get('topic') || document.documentElement.dataset.initialTopic;
   const state = {
     lang: language === 'en' ? 'en' : 'zh',
+    theme: params.get('theme') === 'light' ? 'light' : 'dark',
     topic: topics.includes(initialTopic) ? initialTopic : 'fold',
     fold: { depth: 3, stage: 3, angle: 0, threshold: 0.65, nonlinear: true, point: [0.7, 0.45] },
     gradient: { eta: 0.2, start: 3.5, history: [3.5], timer: null },
@@ -29,7 +32,7 @@
   }
   function hero(num, eyebrow, title, intro, tag) {
     return '<section class="hero"><div><p class="eyebrow">' + num + ' / ' + eyebrow +
-      '</p><h1>' + title + '</h1><p class="intro">' + intro +
+      '</p><h2 class="lesson-heading">' + title + '</h2><p class="intro">' + intro +
       '</p></div><span class="lesson-tag">' + tag + '</span></section>';
   }
   function challenge(question, answer, takeaway, references) {
@@ -45,18 +48,55 @@
   }
   function renderChrome() {
     document.documentElement.lang = state.lang === 'zh' ? 'zh-CN' : 'en';
+    document.documentElement.dataset.theme = state.theme;
     document.title = tr('Deep Learning Lab · 看见算法', 'Deep Learning Lab · Learn by changing things');
     $('brand-caption').textContent = tr('看见算法，理解学习。', 'Learn by changing things.');
     $('offline-label').textContent = tr('离线可用 · 无需 GPU', 'Offline · No GPU required');
     $('nav-heading').textContent = tr('你的实验手册', 'YOUR FIELD NOTES');
     $('language').textContent = state.lang === 'zh' ? 'English' : '中文';
     $('language').setAttribute('aria-label', tr('Switch to English', '切换为中文'));
+    $('theme-toggle').textContent = state.theme === 'dark' ? '☼' : '☾';
+    $('theme-toggle').setAttribute('aria-label', state.theme === 'dark' ? tr('切换为浅色主题', 'Switch to light theme') : tr('切换为深色主题', 'Switch to dark theme'));
+    $('nav-lab').textContent = tr('交互实验', 'Experiments');
+    $('nav-python').textContent = tr('Python 示例', 'Python examples');
+    $('landing-badge').textContent = tr('OPEN SOURCE · 为好奇心而造', 'OPEN SOURCE · MADE FOR CURIOUS MINDS');
+    $('landing-subtitle').textContent = tr('看见算法，理解深度学习。', 'Make deep learning click.');
+    $('landing-description').innerHTML = tr('把抽象的公式，变成可以动手探索的小实验。<br>先观察，再调整，让每一次变化都有迹可循。',
+      'Turn abstract equations into little experiments you can explore.<br>Make a prediction. Change one thing. Follow the math.');
+    $('agent-command').textContent = tr('$deep-learning-lab 帮我理解神经网络', '$deep-learning-lab help me understand neural networks');
+    $('start-experiment').textContent = tr('开始探索 →', 'Start exploring →');
+    $('explore-python').textContent = tr('查看 Python 示例', 'Explore Python');
+    $('lab-section-title').textContent = tr('带着一个问题，开始实验。', 'Bring a question. Find an answer.');
+    const features = [['06', tr('交互实验与网络动画', 'Experiments & network animations')], ['Python', tr('核心算法示例', 'Core algorithm examples')],
+      [tr('离线', 'Offline'), tr('打开即可探索', 'Open and explore')], [tr('双语', '中 / EN'), tr('中文与 English', 'Chinese & English')]];
+    $('feature-strip').innerHTML = features.map(item => '<div class="feature-tile"><strong>' + item[0] + '</strong><span>' + item[1] + '</span></div>').join('');
+    $('python-title').textContent = tr('把图中的变化，对照成代码。', 'Read the idea in Python.');
+    $('python-description').textContent = tr('这里展示当前实验的核心算法，帮助你把图形与代码对应起来。切换实验，即可阅读相应的 Python 示例。',
+      'Read the core algorithm behind the current experiment. Switch experiments to connect each visual idea with its Python example.');
+    $('python-standard').textContent = tr('只读示例', 'Read-only examples');
+    $('python-example-label').textContent = tr('核心算法', 'Core algorithm');
+    $('python-display-note').textContent = tr('代码仅供阅读，不在网页中执行。', 'For reading only. This code does not execute on the page.');
+    const snippets = {
+      fold: ['def fold_once(point, normal):', '    z = sum(p * n for p, n in zip(point, normal))', '    activation = max(0, -z)', '    return [', '        p + 2 * activation * n', '        for p, n in zip(point, normal)', '    ]'],
+      gradient: ['def gradient_step(w, learning_rate):', '    gradient = w - 1', '    return w - learning_rate * gradient'],
+      convolution: ['def patch_response(pixels, kernel):', '    return sum(', '        pixel * weight', '        for row, weights in zip(pixels, kernel)', '        for pixel, weight in zip(row, weights)', '    )']
+    };
+    const captions = {
+      fold: tr('一次 ReLU 折叠；normal 是折线的单位法向量。', 'One ReLU fold; normal is the unit normal to the crease.'),
+      gradient: tr('对应当前损失函数 L(w) = ½(w − 1)² 的一次参数更新。', 'One update for the displayed loss L(w) = ½(w − 1)².'),
+      convolution: tr('一个输入窗口与卷积核逐项相乘、相加，得到一个输出值。', 'Multiply one input patch by the kernel and sum the products to obtain one output.')
+    };
+    $('python-caption').textContent = networkTopics.includes(state.topic) ? window.DLNetworkUI.getCaption(state.topic, state.lang) : captions[state.topic];
+    $('python-snippet').textContent = networkTopics.includes(state.topic) ? window.DLNetworkUI.getPython(state.topic, state.lang) : snippets[state.topic].join('\n');
     $('sidebar-note').innerHTML = tr('先猜一猜，再动手。<br>每一次变化，都有数学依据。',
       'Make a prediction.<br>Change one thing.<br>Follow the math.');
     const names = [
       [tr('空间折叠', 'Space folding'), tr('神经网络的剪窗花', 'A neural paper cut')],
       [tr('梯度下降', 'Gradient descent'), tr('一步步走向最小值', 'Find the way downhill')],
-      [tr('卷积探针', 'Convolution explorer'), tr('看清每一次乘加', 'Follow every multiply-add')]
+      [tr('卷积探针', 'Convolution explorer'), tr('看清每一次乘加', 'Follow every multiply-add')],
+      [tr('CNN 卷积网络', 'CNN'), tr('特征提取与分类', 'Features to class scores')],
+      [tr('ResNet 残差网络', 'ResNet'), tr('追踪跨层连接', 'Follow the skip connection')],
+      [tr('Transformer', 'Transformer'), tr('注意力与信息融合', 'Attention & information flow')]
     ];
     $('lessons').innerHTML = topics.map((topic, i) => '<a class="lesson-link" href="#' + topic +
       '"' + (topic === state.topic ? ' aria-current="page"' : '') + '><span class="num">0' + (i + 1) +
@@ -165,21 +205,27 @@
     tr('特征图里的一个数字从哪里来？移动卷积核，逐项查看输入与权重的乘积，再把它们加起来。',
       'Where does one number in a feature map come from? Move the kernel, inspect each input-weight product, then add them up.'),
     tr('卷积 · 感受野', 'Convolution · Receptive fields')) +
-    '<div class="experiment"><section class="panel controls-panel" aria-label="' + tr('卷积参数', 'Convolution controls') +
+    '<div class="experiment"><section class="panel controls-panel conv-controls" aria-label="' + tr('卷积参数', 'Convolution controls') +
     '"><p class="panel-label">' + tr('动手改变 / CONTROLS', 'CHANGE SOMETHING') + '</p>' +
-    '<div class="control full"><label class="control-head" for="conv-kernel">' + tr('选择卷积核', 'Choose a kernel') +
-    '</label><select id="conv-kernel">' +
-    [['edge', tr('垂直边缘', 'Vertical edges')], ['blur', tr('均值模糊', 'Mean blur')], ['sharpen', tr('锐化', 'Sharpen')]].map(p =>
-      '<option value="' + p[0] + '"' + (c.kernel === p[0] ? ' selected' : '') + '>' + p[1] + '</option>').join('') +
-    '</select></div><div class="control"><label class="control-head" for="conv-stride">' + tr('步幅 s', 'Stride s') +
-    '</label><select id="conv-stride"><option value="1"' + (c.stride === 1 ? ' selected' : '') + '>1</option><option value="2"' +
-    (c.stride === 2 ? ' selected' : '') + '>2</option></select></div><div class="control"><label class="control-head" for="conv-padding">' +
-    tr('零填充 p', 'Zero padding p') + '</label><select id="conv-padding"><option value="0"' + (c.padding === 0 ? ' selected' : '') +
-    '>0</option><option value="1"' + (c.padding === 1 ? ' selected' : '') + '>1</option></select></div><hr class="divider">' +
-    '<div class="control full"><div class="control-head">' + tr('当前扫描位置', 'Current scan position') +
-    '</div><output id="conv-position" class="value"></output></div><button id="conv-next" class="button primary full" type="button">' +
-    tr('下一位置 →', 'Next position →') + '</button><button id="conv-reset" class="button full" type="button">' +
-    tr('还原输入图案', 'Restore input pattern') + '</button><p class="hint full">' +
+    '<fieldset class="conv-field"><legend>' + tr('选择卷积核', 'Choose a kernel') + '</legend><div class="kernel-options">' +
+    [['edge', tr('垂直边缘', 'Vertical edges'), tr('突出左右亮度变化', 'Highlight side-to-side changes')],
+      ['blur', tr('均值模糊', 'Mean blur'), tr('平滑局部细节', 'Smooth local detail')],
+      ['sharpen', tr('锐化', 'Sharpen'), tr('增强边缘与细节', 'Strengthen edges and detail')]].map(p =>
+      '<button type="button" class="kernel-option" data-kernel="' + p[0] + '" aria-pressed="' + (c.kernel === p[0]) +
+      '"><span><strong>' + p[1] + '</strong><small>' + p[2] + '</small></span><span class="kernel-check" aria-hidden="true">✓</span></button>').join('') +
+    '</div></fieldset><fieldset class="conv-field"><legend>' + tr('步幅', 'Stride') +
+    ' <span class="param-symbol">s</span></legend><div class="segmented-control">' +
+    [1, 2].map(v => '<button type="button" data-conv-stride="' + v + '" aria-pressed="' + (c.stride === v) + '">' +
+      v + tr(' 格', ' cell' + (v > 1 ? 's' : '')) + '</button>').join('') +
+    '</div></fieldset><fieldset class="conv-field"><legend>' + tr('零填充', 'Zero padding') +
+    ' <span class="param-symbol">p</span></legend><div class="segmented-control">' +
+    [0, 1].map(v => '<button type="button" data-conv-padding="' + v + '" aria-pressed="' + (c.padding === v) + '">' +
+      (v ? tr('补 1 圈', '1 border') : tr('不填充', 'None')) + '</button>').join('') +
+    '</div></fieldset><div class="conv-scan"><span>' + tr('当前扫描位置', 'Current scan position') +
+    '</span><output id="conv-position" class="value" aria-live="polite"></output></div><div class="conv-actions">' +
+    '<button id="conv-next" class="button primary" type="button">' + tr('下一位置', 'Next position') +
+    '<span aria-hidden="true">→</span></button><button id="conv-reset" class="button" type="button">' +
+    tr('还原输入图案', 'Restore input pattern') + '</button></div><p class="hint">' +
     tr('点击输入格子切换 0 / 1；点击输出格子，查看它的感受野。', 'Click an input cell to toggle 0 / 1. Select an output cell to inspect its receptive field.') +
     '</p></section><div class="visual-area"><section class="panel plot-card"><div class="plot-head"><h2 class="plot-title">' +
     tr('一次滑动，一次乘加', 'One window. Nine products. One sum.') + '</h2><span id="conv-size" class="plot-subtitle"></span></div>' +
@@ -210,6 +256,7 @@
   function stopPlayback() {
     if (state.gradient.timer !== null) clearInterval(state.gradient.timer);
     state.gradient.timer = null;
+    if (networkController) networkController.pause();
   }
   function resetGradient() {
     stopPlayback();
@@ -223,6 +270,7 @@
     update();
   }
   function bind() {
+    if (networkTopics.includes(state.topic)) return;
     if (state.topic === 'fold') {
       bindRange('fold-depth', v => { state.fold.depth = v; state.fold.stage = v; });
       bindRange('fold-angle', v => { state.fold.angle = v; });
@@ -253,10 +301,15 @@
         update();
       };
     } else {
-      ['kernel', 'stride', 'padding'].forEach(key => $('conv-' + key).addEventListener('change', e => {
-        state.convolution[key] = key === 'kernel' ? e.target.value : Number(e.target.value);
+      document.querySelectorAll('[data-kernel]').forEach(button => button.addEventListener('click', () => {
+        state.convolution.kernel = button.dataset.kernel;
         state.convolution.selected = 0; update();
       }));
+      ['stride', 'padding'].forEach(key => document.querySelectorAll('[data-conv-' + key + ']').forEach(button =>
+        button.addEventListener('click', () => {
+          state.convolution[key] = Number(button.getAttribute('data-conv-' + key));
+          state.convolution.selected = 0; update();
+        })));
       $('conv-next').onclick = () => {
         const c = state.convolution, result = M.correlate(c.input, M.KERNELS[c.kernel], c.stride, c.padding);
         c.selected = (c.selected + 1) % result.patches.length; update();
@@ -332,6 +385,9 @@
   }
   function updateConvolution() {
     const c = state.convolution, kernel = M.KERNELS[c.kernel];
+    document.querySelectorAll('[data-kernel]').forEach(button => button.setAttribute('aria-pressed', button.dataset.kernel === c.kernel));
+    ['stride', 'padding'].forEach(key => document.querySelectorAll('[data-conv-' + key + ']').forEach(button =>
+      button.setAttribute('aria-pressed', Number(button.getAttribute('data-conv-' + key)) === c[key])));
     const result = M.correlate(c.input, kernel, c.stride, c.padding);
     c.selected = Math.min(c.selected, result.patches.length - 1);
     const patch = result.patches[c.selected];
@@ -469,14 +525,23 @@
   function drawAll() {
     if (state.topic === 'fold') drawFold();
     if (state.topic === 'gradient') drawGradient();
+    if (networkController) networkController.redraw();
   }
   function update() {
     if (state.topic === 'fold') updateFold();
     else if (state.topic === 'gradient') updateGradient();
-    else updateConvolution();
+    else if (state.topic === 'convolution') updateConvolution();
+    else if (networkController) networkController.redraw();
   }
   function render() {
-    stopPlayback(); renderChrome();
+    stopPlayback();
+    if (networkController) { networkController.destroy(); networkController = null; }
+    renderChrome();
+    if (networkTopics.includes(state.topic)) {
+      $('main').innerHTML = window.DLNetworkUI.render(state.topic, state.lang);
+      networkController = window.DLNetworkUI.mount($('main'), state.topic, state.lang);
+      return;
+    }
     $('main').innerHTML = state.topic === 'fold' ? renderFold() : state.topic === 'gradient' ? renderGradient() : renderConvolution();
     bind(); update();
   }
@@ -488,9 +553,22 @@
     } catch (_) { /* some file URL contexts disallow replaceState */ }
     render();
   };
+  $('theme-toggle').onclick = () => {
+    state.theme = state.theme === 'dark' ? 'light' : 'dark';
+    try {
+      const url = new URL(location.href); url.searchParams.set('theme', state.theme);
+      history.replaceState(null, '', url.href);
+    } catch (_) { /* optional state in restricted file contexts */ }
+    renderChrome(); drawAll();
+  };
+  function scrollToSection(id) {
+    $(id).scrollIntoView({ behavior: window.matchMedia('(prefers-reduced-motion: reduce)').matches ? 'instant' : 'smooth', block: 'start' });
+  }
+  $('start-experiment').onclick = $('nav-lab').onclick = () => scrollToSection('lab');
+  $('explore-python').onclick = $('nav-python').onclick = () => scrollToSection('python-guide');
   window.addEventListener('hashchange', () => {
     const topic = location.hash.slice(1);
-    state.topic = topics.includes(topic) ? topic : 'fold'; render();
+    if (topics.includes(topic)) { state.topic = topic; render(); }
   });
   document.addEventListener('visibilitychange', () => {
     if (document.hidden) { stopPlayback(); if (state.topic === 'gradient') updateGradient(); }

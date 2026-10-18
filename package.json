@@ -5,7 +5,7 @@
   "description": "Offline bilingual visual experiments and an Agent Skill for deep learning beginners.",
   "license": "MIT",
   "scripts": {
-    "test": "node --test tests/core.test.js",
+    "test": "node --test tests/core.test.js tests/network-model.test.js",
     "test:browser": "node tests/browser.cjs"
   },
   "devDependencies": {
