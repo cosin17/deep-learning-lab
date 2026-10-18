@@ -1,0 +1,4 @@
+interface:
+  display_name: "Deep Learning Lab"
+  short_description: "Interactive visual experiments for deep learning beginners"
+  default_prompt: "Use $deep-learning-lab to explain a deep learning concept with an interactive experiment."

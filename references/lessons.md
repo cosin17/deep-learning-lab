@@ -1,0 +1,67 @@
+# Bundled experiments: exact models and teaching boundaries
+
+Read the section for the selected topic. All model functions live in `assets/lab/core.js`; the UI calls those functions rather than maintaining separate display math.
+
+## Space folding (`fold`)
+
+Question: how can a straight boundary in transformed space produce several boundary segments in input space?
+
+Rotate the input by the selected angle. Each folding block uses a unit normal n:
+
+```text
+z = n · p
+p_next = p + 2 ReLU(-z) n
+output_score = h_1 - 0.5 h_2 - threshold
+keep if output_score >= 0; cut otherwise
+```
+
+Negative-side points reflect across the line n · p = 0. Positive-side points stay in place. Normals, in order, are (0,1), (1,0), (1/√2,-1/√2), and (sin(π/8),-cos(π/8)). Four blocks place the input in a 22.5-degree wedge. Each reflection preserves the distance to the origin.
+
+This is a deliberately constructed residual ReLU module with a linear skip path. “One fold” is not a claim that every ordinary dense layer performs this operation. There is no training in this example, and adding arbitrary layers does not guarantee a more useful classifier.
+
+Disabling ReLU replaces ReLU(-z) with -z. Every block then reflects the entire plane linearly. The composition, including the output readout and bias, still has a straight classification boundary.
+
+The tracked point shows the selected stage; classification colors always use the final output. The dashed output line appears only at the final stage. The input rotation also applies at stage zero.
+
+Exercise: keep four blocks but disable ReLU; predict the new boundary. Then change the cut threshold and watch the bias change the pattern.
+
+Primary research: [Montúfar et al., On the Number of Linear Regions of Deep Neural Networks (2014)](https://arxiv.org/abs/1402.1869). The demo is an original construction inspired by the spatial-folding explanation; it is not a reproduction of all results in that paper.
+
+## Gradient descent (`gradient`)
+
+Question: why can a step in the negative-gradient direction still increase loss?
+
+```text
+L(w) = (w - 1)^2 / 2
+gradient = w - 1
+w_next = w - eta (w - 1)
+error_next = (1 - eta) error
+```
+
+For this particular quadratic: 0 < eta < 1 approaches from one side; eta = 1 reaches the minimum in one update; 1 < eta < 2 oscillates with shrinking error; eta = 2 preserves nonzero error magnitude; eta > 2 enlarges nonzero error. A start exactly at w = 1 stays there at every supported rate.
+
+These numerical thresholds depend on curvature and are not universal neural-network learning-rate rules. The model uses full, exact gradients, not stochastic minibatches, momentum, or Adam. Plot axes rescale as the trajectory grows. Changing the learning rate or starting value resets the history, avoiding a mixed-rate path.
+
+Exercise: compare eta = 0.2, 1.6, 2, and 2.2. Compute the first update independently, then compare the readout. Playback is bounded at 40 updates.
+
+Source: [Dive into Deep Learning, Gradient Descent](https://d2l.ai/chapter_optimization/gd.html).
+
+## Convolution (`convolution`)
+
+Question: which inputs and weights contribute to one output value?
+
+The demo uses a 5 × 5 editable binary input, a 3 × 3 kernel, stride 1 or 2, and zero-padding 0 or 1. There is one input/output channel and no bias, dilation, training, or activation.
+
+```text
+Y[r,c] = sum_i sum_j X[r*stride+i-padding, c*stride+j-padding] K[i,j]
+outside-input X values are zero
+output_size = floor((input_size + 2*padding - kernel_size) / stride) + 1
+```
+
+This is cross-correlation, the convention commonly called convolution in CNN implementations: the kernel is not reversed. The dimension formula assumes unit dilation. Coordinates in the inspector are zero-based; accessible cell labels use one-based row/column descriptions.
+
+Kernel options are a vertical edge detector, a 1/9 mean kernel, and a sharpening kernel. Output values can be negative and are intentionally not clamped. Inspecting a padded boundary demonstrates why mean filtering there may reduce intensity.
+
+Exercise: predict the output shape for stride 2 and padding 1, then inspect the bottom-right output and the nine displayed products.
+
+Sources: [Convolutions for Images](https://d2l.ai/chapter_convolutional-neural-networks/conv-layer.html), [Padding and Stride](https://d2l.ai/chapter_convolutional-neural-networks/padding-and-strides.html), Dive into Deep Learning.

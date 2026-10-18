@@ -1,0 +1,17 @@
+{
+  "name": "deep-learning-lab",
+  "version": "0.1.0",
+  "private": true,
+  "description": "Offline bilingual visual experiments and an Agent Skill for deep learning beginners.",
+  "license": "MIT",
+  "scripts": {
+    "test": "node --test tests/core.test.js",
+    "test:browser": "node tests/browser.cjs"
+  },
+  "devDependencies": {
+    "playwright": "1.62.1"
+  },
+  "engines": {
+    "node": ">=20"
+  }
+}
