@@ -16,6 +16,14 @@ const near = (a, b) => assert.ok(Math.abs(a - b) < 1e-4, a + ' ≉ ' + b);
     const context = await browser.newContext({ viewport: { width: 1440, height: 1050 }, colorScheme: 'light', reducedMotion: 'reduce' });
     await context.route(/^https?:/, route => route.abort());
     const page = await context.newPage();
+    const openTopic = async topic => {
+      await page.locator('.lesson-link[href="#' + topic + '"]').click();
+      // Hash navigation is asynchronous; wait for this lesson before reading its DOM.
+      const ready = { fold: '#fold-depth', gradient: '#gd-step', convolution: '#conv-next' }[topic]
+        || '#network-lab[data-network="' + topic + '"]';
+      await page.locator(ready).waitFor({ state: 'visible' });
+      await page.locator('.lesson-link[aria-current="page"][href="#' + topic + '"]').waitFor();
+    };
     page.on('pageerror', e => errors.push(e.message));
     page.on('request', request => { if (/^https?:/.test(request.url())) externalRequests.push(request.url()); });
     await page.goto(pathToFileURL(path.join(root, 'assets/lab/index.html')).href + '?lang=zh#fold');
@@ -57,7 +65,7 @@ const near = (a, b) => assert.ok(Math.abs(a - b) < 1e-4, a + ' ≉ ' + b);
     assert.equal(await page.locator('#fold-depth').inputValue(), '4', 'language changes preserve experiment parameters');
     checks.push('language switch preserves parameters and changes labels');
 
-    await page.locator('a[href="#gradient"]').click();
+    await openTopic('gradient');
     await page.locator('#gd-step').click();
     near(Number(await page.locator('#gd-w').innerText()), 3);
     near(Number(await page.locator('#gd-loss').innerText()), 2);
@@ -75,7 +83,7 @@ const near = (a, b) => assert.ok(Math.abs(a - b) < 1e-4, a + ' ≉ ' + b);
     if (screenshots) await page.screenshot({ path: path.join(screenshots, 'gradient-en.png'), fullPage: true });
     checks.push('gradient descent: hand-calculated step, equal-loss oscillation, playback and reset');
 
-    await page.locator('a[href="#convolution"]').click();
+    await openTopic('convolution');
     assert.equal(await page.locator('[data-output]').count(), 9);
     assert.match(await page.locator('#conv-total').innerText(), /2$/);
     await page.locator('[data-input="0,0"]').click();
@@ -97,7 +105,7 @@ const near = (a, b) => assert.ok(Math.abs(a - b) < 1e-4, a + ' ≉ ' + b);
     if (screenshots) await page.screenshot({ path: path.join(screenshots, 'convolution-en.png'), fullPage: true });
     checks.push('convolution: independent hand calculation, editing, focus, padding, receptive field, kernel and stride');
 
-    await page.locator('a[href="#cnn"]').click();
+    await openTopic('cnn');
     assert.equal(await page.locator('#net-play').getAttribute('aria-pressed'), 'false');
     assert.equal(await page.locator('[data-net-stage]').count(), 7);
     assert.equal(await page.locator('#net-after .net-cell').count(), 64);
@@ -126,7 +134,7 @@ const near = (a, b) => assert.ok(Math.abs(a - b) < 1e-4, a + ' ≉ ' + b);
     assert.match(await page.locator('#python-snippet').innerText(), /def cnn/);
     checks.push('CNN: real layer shapes, ReLU values, step/previous/select/play/pause, automatic stop, probabilities and reset');
 
-    await page.locator('a[href="#resnet"]').click();
+    await openTopic('resnet');
     await page.locator('#net-zero').check();
     assert.deepEqual((await page.locator('#net-after .net-cell').allTextContents()).map(Number), [1, -0.5, 0.75, 0.25]);
     const residualWeights = page.locator('.net-weight-matrix').filter({ has: page.locator('.net-mini-label', { hasText: /^w2$/ }) });
@@ -143,7 +151,7 @@ const near = (a, b) => assert.ok(Math.abs(a - b) < 1e-4, a + ' ≉ ' + b);
     assert.ok((await residualWeights.locator('.net-cell').allTextContents()).some(value => Number(value) !== 0), 'reset restores parameter inspector');
     checks.push('ResNet: zero residual is identity with shortcut, zero without it; language preserves settings and stage');
 
-    await page.locator('a[href="#transformer"]').click();
+    await openTopic('transformer');
     assert.equal(await page.locator('[data-net-stage]').count(), 11);
     await page.locator('#net-causal').check();
     assert.deepEqual(await page.locator('.net-weight strong').allTextContents(), ['100.0%', '0.0%', '0.0%']);
@@ -167,8 +175,8 @@ const near = (a, b) => assert.ok(Math.abs(a - b) < 1e-4, a + ' ≉ ' + b);
     assert.equal(await page.locator('#net-causal').isChecked(), true);
     await page.locator('#theme-toggle').click();
     await page.locator('#net-play').click();
-    await page.locator('a[href="#cnn"]').click();
-    await page.locator('a[href="#transformer"]').click();
+    await openTopic('cnn');
+    await openTopic('transformer');
     assert.equal(await page.locator('#net-play').getAttribute('aria-pressed'), 'false', 'leaving a lesson stops playback');
     assert.match(await page.locator('#python-snippet').innerText(), /def attention/);
     await page.locator('#language').click();
@@ -177,7 +185,7 @@ const near = (a, b) => assert.ok(Math.abs(a - b) < 1e-4, a + ' ≉ ' + b);
     for (const width of [1440, 1024, 1020, 768, 740, 390, 360, 320]) {
       await page.setViewportSize({ width, height: 1000 });
       for (const topic of ['fold', 'gradient', 'convolution', 'cnn', 'resnet', 'transformer']) {
-        await page.locator('.lesson-link[href="#' + topic + '"]').click();
+        await openTopic(topic);
         const overflow = await page.evaluate(() => ({
           viewport: innerWidth, document: document.documentElement.scrollWidth,
           elements: [...document.querySelectorAll('body *')].filter(el => {
@@ -194,7 +202,7 @@ const near = (a, b) => assert.ok(Math.abs(a - b) < 1e-4, a + ' ≉ ' + b);
     const bg = await page.evaluate(() => getComputedStyle(document.body).backgroundColor);
     assert.notEqual(bg, 'rgb(247, 246, 242)');
     checks.push('dark theme renders across all lesson layouts without runtime errors');
-    await page.locator('a[href="#convolution"]').click();
+    await openTopic('convolution');
     await page.locator('#explore-python').click();
     assert.ok(await page.locator('#python-guide').evaluate(el => {
       const rect = el.getBoundingClientRect(); return rect.top < innerHeight && rect.bottom > 0;
@@ -215,7 +223,7 @@ const near = (a, b) => assert.ok(Math.abs(a - b) < 1e-4, a + ' ≉ ' + b);
       await page.locator('#gd-step').click();
       near(Number(await page.locator('#gd-w').innerText()), 3);
       assert.equal(await page.locator('html').getAttribute('data-theme'), 'dark');
-      await page.locator('a[href="#transformer"]').click();
+      await openTopic('transformer');
       await page.locator('#net-causal').check();
       assert.deepEqual(await page.locator('.net-weight strong').allTextContents(), ['100.0%', '0.0%', '0.0%']);
       checks.push('CLI-exported copy opens offline with requested topic and language');
