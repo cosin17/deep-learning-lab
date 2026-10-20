@@ -19,13 +19,16 @@ GitHub's file preview does not execute the lab. Use a downloaded copy, or enable
 | Space folding | Add folding blocks, rotate the input, move the cut, trace a point, disable ReLU | How nonlinearity can create a complex boundary |
 | Gradient descent | Step or play; compare four learning rates | Convergence, oscillation, and divergence |
 | Convolution | Edit pixels; change the kernel, stride, and padding; inspect nine products | How a feature value and its receptive field are connected |
-| CNN | Play through convolution, activation, pooling, and output; inspect shapes and feature maps | How local features become class scores |
-| ResNet | Trace the main and skip paths; toggle the skip connection and zero residual | How the input is added to a residual output |
-| Transformer | Follow attention and residual blocks; select a query token and toggle causal masking | How a token combines information from other positions |
+| CNN | Edit pixels; select an output to trace products, ReLU or a pooling window | Where an individual feature value comes from |
+| ResNet | Scale the residual and compare the same correction with/without a shortcut | How the input is added to a residual output |
+| Transformer | Reveal scores, softmax and value mixing in order; change hand-set vectors and masking | How a token combines information from other positions |
+| MLP training | Train a 2 → 4 → 1 network on 16 XOR or linearly separable samples; inspect boundaries, loss and weight updates | How backpropagation changes parameters |
 
 Start by setting four folding blocks, predicting the effect of disabling ReLU, then trying it. The navy interface uses blue/orange glows and translucent panels, supports Chinese / English, narrow screens, keyboard controls, and a light / dark toggle in the header.
 
 The three network animations support play, pause, stepping, reset, and stage selection. They compute small forward passes with fixed hand-written weights and show actual intermediate values. They are not pretrained models and do not claim recognition accuracy. Convolution settings use themed selection cards and segmented buttons.
+
+The network overview is collapsible, keeping the current explanation near its tensors. Inputs and outputs share a color scale. The separate MLP lesson genuinely trains with full-batch SGD, tanh, sigmoid and binary cross-entropy for up to 3000 steps. Its training loss does not measure generalization. All computation stays in the offline browser.
 
 ## Reproduce the math in Python
 
@@ -55,7 +58,7 @@ $deep-learning-lab Help me see why a large learning rate can diverge.
 $deep-learning-lab Build a minimal visual explanation of attention weights.
 ```
 
-Six topics are bundled, including a small attention demonstration in the Transformer animation. Other algorithms use the authoring guidance and need a newly implemented and verified experiment. Running the AI skill needs a compatible agent; browsing the experiments does not.
+Seven topics are bundled, including inspectable attention and a tiny trainable MLP. Other algorithms use the authoring guidance and need a newly implemented and verified experiment. Running the AI skill needs a compatible agent; browsing the experiments does not.
 
 Export a portable copy with Python 3.10+:
 
@@ -63,7 +66,7 @@ Export a portable copy with Python 3.10+:
 python scripts/export_lab.py --output ./my-experiment --topic gradient --lang en
 ```
 
-The destination must not exist. The exported copy includes all six topics and the foundational Python source, with the selected topic and language as its starting state. Topic options are `fold`, `gradient`, `convolution`, `cnn`, `resnet`, and `transformer`.
+The destination must not exist. The exported copy includes all seven topics and the foundational Python source, with the selected topic and language as its starting state. Topic options are `fold`, `gradient`, `convolution`, `cnn`, `resnet`, `transformer`, and `mlp`.
 
 ## Share through GitHub Pages
 
@@ -90,7 +93,7 @@ npm run test:browser
 
 Set `DLLAB_BROWSER_CHANNEL=msedge` to use an installed Edge browser. Optionally set `DLLAB_SCREENSHOT_DIR` for screenshots. Browser checks cover interactions, independent numerical expectations, language switching, dark mode, external resource requests, and 320–1440px layouts. Chromium-family browsers are checked; Firefox and Safari have not been verified.
 
-Foundational models are in `assets/lab/core.js`, network forward passes in `assets/lab/network-model.js`, and their interfaces in `assets/lab/app.js` and `assets/lab/networks-ui.js`. See `references/lessons.md` for topic definitions and `references/authoring.md` for extension guidance.
+Foundational models are in `assets/lab/core.js`, network forward passes in `assets/lab/network-model.js`, and MLP training in `assets/lab/mlp-model.js`. Interfaces are separate in `app.js`, `networks-ui.js` and `mlp-ui.js`. See `references/lessons.md` for definitions and `references/authoring.md` for extension guidance.
 
 ## Scope and license
 

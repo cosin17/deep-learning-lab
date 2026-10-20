@@ -1,8 +1,8 @@
 (function () {
   'use strict';
   const M = window.DLLab;
-  const topics = ['fold', 'gradient', 'convolution', 'cnn', 'resnet', 'transformer'];
-  const networkTopics = ['cnn', 'resnet', 'transformer'];
+  const topics = ['fold', 'gradient', 'convolution', 'cnn', 'resnet', 'transformer', 'mlp'];
+  const networkTopics = ['cnn', 'resnet', 'transformer', 'mlp'];
   let networkController = null;
   const params = new URLSearchParams(location.search);
   const language = params.get('lang') || document.documentElement.dataset.initialLanguage;
@@ -67,7 +67,7 @@
     $('start-experiment').textContent = tr('开始探索 →', 'Start exploring →');
     $('explore-python').textContent = tr('查看 Python 示例', 'Explore Python');
     $('lab-section-title').textContent = tr('带着一个问题，开始实验。', 'Bring a question. Find an answer.');
-    const features = [['06', tr('交互实验与网络动画', 'Experiments & network animations')], ['Python', tr('核心算法示例', 'Core algorithm examples')],
+    const features = [['07', tr('交互实验与网络动画', 'Experiments & network animations')], ['Python', tr('核心算法示例', 'Core algorithm examples')],
       [tr('离线', 'Offline'), tr('打开即可探索', 'Open and explore')], [tr('双语', '中 / EN'), tr('中文与 English', 'Chinese & English')]];
     $('feature-strip').innerHTML = features.map(item => '<div class="feature-tile"><strong>' + item[0] + '</strong><span>' + item[1] + '</span></div>').join('');
     $('python-title').textContent = tr('把图中的变化，对照成代码。', 'Read the idea in Python.');
@@ -86,8 +86,9 @@
       gradient: tr('对应当前损失函数 L(w) = ½(w − 1)² 的一次参数更新。', 'One update for the displayed loss L(w) = ½(w − 1)².'),
       convolution: tr('一个输入窗口与卷积核逐项相乘、相加，得到一个输出值。', 'Multiply one input patch by the kernel and sum the products to obtain one output.')
     };
-    $('python-caption').textContent = networkTopics.includes(state.topic) ? window.DLNetworkUI.getCaption(state.topic, state.lang) : captions[state.topic];
-    $('python-snippet').textContent = networkTopics.includes(state.topic) ? window.DLNetworkUI.getPython(state.topic, state.lang) : snippets[state.topic].join('\n');
+    const networkUI = state.topic === 'mlp' ? window.DLMLPUI : window.DLNetworkUI;
+    $('python-caption').textContent = networkTopics.includes(state.topic) ? networkUI.getCaption(state.topic, state.lang) : captions[state.topic];
+    $('python-snippet').textContent = networkTopics.includes(state.topic) ? networkUI.getPython(state.topic, state.lang) : snippets[state.topic].join('\n');
     $('sidebar-note').innerHTML = tr('先猜一猜，再动手。<br>每一次变化，都有数学依据。',
       'Make a prediction.<br>Change one thing.<br>Follow the math.');
     const names = [
@@ -96,7 +97,8 @@
       [tr('卷积探针', 'Convolution explorer'), tr('看清每一次乘加', 'Follow every multiply-add')],
       [tr('CNN 卷积网络', 'CNN'), tr('特征提取与分类', 'Features to class scores')],
       [tr('ResNet 残差网络', 'ResNet'), tr('追踪跨层连接', 'Follow the skip connection')],
-      [tr('Transformer', 'Transformer'), tr('注意力与信息融合', 'Attention & information flow')]
+      [tr('Transformer', 'Transformer'), tr('注意力与信息融合', 'Attention & information flow')],
+      [tr('MLP 训练', 'MLP training'), tr('看见网络怎样学习', 'Watch a network learn')]
     ];
     $('lessons').innerHTML = topics.map((topic, i) => '<a class="lesson-link" href="#' + topic +
       '"' + (topic === state.topic ? ' aria-current="page"' : '') + '><span class="num">0' + (i + 1) +
@@ -538,8 +540,9 @@
     if (networkController) { networkController.destroy(); networkController = null; }
     renderChrome();
     if (networkTopics.includes(state.topic)) {
-      $('main').innerHTML = window.DLNetworkUI.render(state.topic, state.lang);
-      networkController = window.DLNetworkUI.mount($('main'), state.topic, state.lang);
+      const networkUI = state.topic === 'mlp' ? window.DLMLPUI : window.DLNetworkUI;
+      $('main').innerHTML = networkUI.render(state.topic, state.lang);
+      networkController = networkUI.mount($('main'), state.topic, state.lang);
       return;
     }
     $('main').innerHTML = state.topic === 'fold' ? renderFold() : state.topic === 'gradient' ? renderGradient() : renderConvolution();

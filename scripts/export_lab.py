@@ -8,7 +8,7 @@ import sys
 
 
 def export_lab(output: Path, topic: str = "fold", language: str = "zh") -> Path:
-    if topic not in {"fold", "gradient", "convolution", "cnn", "resnet", "transformer"}:
+    if topic not in {"fold", "gradient", "convolution", "cnn", "resnet", "transformer", "mlp"}:
         raise ValueError("Unsupported topic")
     if language not in {"zh", "en"}:
         raise ValueError("Unsupported language")
@@ -17,7 +17,7 @@ def export_lab(output: Path, topic: str = "fold", language: str = "zh") -> Path:
         raise FileExistsError("Destination already exists; choose a new directory: " + str(output))
     skill_root = Path(__file__).resolve().parents[1]
     source = skill_root / "assets" / "lab"
-    names = ("index.html", "style.css", "design.css", "controls.css", "networks.css", "core.js", "network-model.js", "networks-ui.js", "app.js")
+    names = ("index.html", "style.css", "design.css", "controls.css", "networks.css", "core.js", "network-model.js", "networks-ui.js", "mlp-model.js", "mlp-ui.js", "app.js")
     for name in names:
         if not (source / name).is_file():
             raise FileNotFoundError("Missing lab resource: " + name)
@@ -41,7 +41,7 @@ def export_lab(output: Path, topic: str = "fold", language: str = "zh") -> Path:
 def main() -> int:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--output", type=Path, required=True, help="New destination directory")
-    parser.add_argument("--topic", choices=["fold", "gradient", "convolution", "cnn", "resnet", "transformer"], default="fold")
+    parser.add_argument("--topic", choices=["fold", "gradient", "convolution", "cnn", "resnet", "transformer", "mlp"], default="fold")
     parser.add_argument("--lang", choices=["zh", "en"], default="zh")
     args = parser.parse_args()
     try:

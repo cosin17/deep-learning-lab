@@ -74,11 +74,15 @@ All three use deterministic, small, hand-written weights and perform no training
 
 An 8 × 8 single-channel image passes through a 3 × 3 valid correlation, ReLU, 2 × 2 pooling, aggregation, and a small output readout. Inspect how negative activations are suppressed and spatial resolution changes. Output scores illustrate a readout, not learned recognition accuracy. This is a small construction, not a complete LeNet reproduction.
 
+The input pixels are editable; default/horizontal/empty presets recompute the entire forward pass. Selecting a convolution output shows its nine actual products and highlights its input patch. ReLU selects one source cell; pooling highlights its 2 × 2 window and all tied maxima. The current inputs and output share one color scale; calculations use full precision while display rounds to three decimals.
+
 Reference: [PyTorch's CNN tutorial](https://docs.pytorch.org/tutorials/beginner/blitz/neural_networks_tutorial.html).
 
 ### ResNet
 
 Trace a small vector through a residual branch F(x) and inspect the sum x + F(x). Turning off the skip shows F(x) alone; setting F(x) to zero while retaining the skip demonstrates identity. The illustration omits normalization and a post-add activation so the addition can be inspected directly.
+
+The strength slider extends this to y = x + αF(x), α in [0,2]. The comparison card uses the same residual for both shortcut settings. At α = 0, a retained shortcut is exactly identity; without it, the output is zero. This illustrates forward addition, not a measurement of gradient flow or training ease.
 
 Exercise: predict the output with a zero residual, then toggle the skip connection. Do not imply that the full architecture is simply identity or that arbitrary extra layers always improve accuracy.
 
@@ -92,4 +96,16 @@ This is a single-head teaching block with fixed weights, not a complete language
 
 Exercise: select the first query, enable masking, and explain why only its own position remains visible.
 
+Results are revealed by stage: no attention inspector before score calculation; the score stage shows only dot products and masking; the attention stage adds normalized weights; value mixing adds one query/feature's weighted sum. Hand-set vector presets change actual projections and weights, not learned sentence meaning. Q, K and V branch from the same input. The network overview is collapsible so the current inspector is near the controls.
+
 Reference: [Vaswani et al., Attention Is All You Need](https://arxiv.org/abs/1706.03762).
+
+## Tiny MLP training (`mlp`)
+
+A 2 → 4 → 1 network uses tanh hidden units and a sigmoid output. Sixteen deterministic points form either XOR or a linearly separable training set. Seed 42 initializes the parameters. Stable binary cross-entropy is computed from the logit as max(z,0) − yz + log1p(exp(−abs(z))). The full-batch gradient uses dL/dz = (sigmoid(z) − y)/16 and backpropagates through tanh with derivative 1 − h². All parameter gradients use the same pre-update parameters. SGD applies θ_new = θ − η∇L, with a maximum of 3000 updates.
+
+The initial and current maps share fixed coordinate bounds and a probability color scale. Labeled dots are training samples; the square probe can be moved with the coordinate sliders or by clicking the current map. The loss curve records each update, including intermediate updates in the 100-step button. The weight inspector shows the last update, or a non-mutating next-step preview before training. Switching datasets restarts with the same seed; language and theme changes retain training state. Playback stops on route changes or hidden tabs.
+
+Exercise: predict whether the same initialization follows the same loss curve on XOR and linearly separable labels, then compare. This is genuine local training on a toy dataset, not a benchmark, trained language model, or demonstration of generalization. The browser math is in `mlp-model.js`, UI in `mlp-ui.js`; the Python panel is a read-only structural illustration.
+
+Reference: [PyTorch training tutorial](https://docs.pytorch.org/tutorials/beginner/blitz/neural_networks_tutorial.html).

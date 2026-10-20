@@ -19,10 +19,14 @@ const near = (a, b) => assert.ok(Math.abs(a - b) < 1e-4, a + ' ≉ ' + b);
     const openTopic = async topic => {
       await page.locator('.lesson-link[href="#' + topic + '"]').click();
       // Hash navigation is asynchronous; wait for this lesson before reading its DOM.
-      const ready = { fold: '#fold-depth', gradient: '#gd-step', convolution: '#conv-next' }[topic]
+      const ready = { fold: '#fold-depth', gradient: '#gd-step', convolution: '#conv-next', mlp: '#mlp-step' }[topic]
         || '#network-lab[data-network="' + topic + '"]';
       await page.locator(ready).waitFor({ state: 'visible' });
       await page.locator('.lesson-link[aria-current="page"][href="#' + topic + '"]').waitFor();
+    };
+    const chooseStage = async index => {
+      if (!await page.locator('#net-overview').evaluate(el => el.open)) await page.locator('#net-overview > summary').click();
+      await page.locator('[data-net-stage="' + index + '"]').click();
     };
     page.on('pageerror', e => errors.push(e.message));
     page.on('request', request => { if (/^https?:/.test(request.url())) externalRequests.push(request.url()); });
@@ -109,20 +113,38 @@ const near = (a, b) => assert.ok(Math.abs(a - b) < 1e-4, a + ' ≉ ' + b);
     assert.equal(await page.locator('#net-play').getAttribute('aria-pressed'), 'false');
     assert.equal(await page.locator('[data-net-stage]').count(), 7);
     assert.equal(await page.locator('#net-after .net-cell').count(), 64);
+    await page.locator('#net-after [data-net-cell="0,0"]').click();
+    assert.equal(await page.locator('#net-after [data-net-cell="0,0"]').innerText(), '1');
+    await page.locator('[data-net-pattern="default"]').click();
     await page.locator('#net-next').click();
     assert.equal(await page.locator('#net-after .net-cell').count(), 36);
+    await page.locator('#net-after [data-net-cell="0,0"]').click();
+    assert.equal(await page.locator('#net-before .net-source-cell').count(), 9);
+    assert.equal(await page.locator('#net-trace .net-products span').count(), 9);
+    assert.match(await page.locator('#net-trace').innerText(), /Σ = 1/);
     assert.equal(await page.locator('[data-net-stage="1"]').getAttribute('aria-current'), 'step');
     await page.locator('#net-prev').click();
     assert.equal(await page.locator('#net-after .net-cell').count(), 64);
-    await page.locator('[data-net-stage="2"]').click();
+    await chooseStage(2);
     const relu = await page.locator('#net-after .net-cell').allTextContents();
     assert.ok(relu.every(value => Number(value) >= 0));
+    await page.locator('#net-after [data-net-cell="0,3"]').focus();
+    await page.locator('#net-after [data-net-cell="0,3"]').press('Space');
+    assert.match(await page.locator('#net-trace').innerText(), /max\(0, -3\) = 0/);
+    await chooseStage(3);
+    await page.locator('#net-after [data-net-cell="0,0"]').click();
+    assert.equal(await page.locator('#net-before .net-source-cell').count(), 4);
+    assert.equal(await page.locator('#net-before .net-winner').count(), 1);
+    await page.locator('[data-net-pattern="empty"]').click();
+    assert.equal(await page.locator('#net-before .net-winner').count(), 4, 'pooling shows all tied maxima');
+    await page.locator('[data-net-pattern="default"]').click();
+    await chooseStage(2);
     await page.locator('#net-play').click();
     assert.equal(await page.locator('#net-play').getAttribute('aria-pressed'), 'true');
     await page.waitForFunction(() => document.querySelector('[data-net-stage="3"]').getAttribute('aria-current') === 'step');
     await page.locator('#net-play').click();
     assert.equal(await page.locator('#net-play').getAttribute('aria-pressed'), 'false');
-    await page.locator('[data-net-stage="5"]').click();
+    await chooseStage(5);
     await page.locator('#net-play').click();
     await page.waitForFunction(() => document.getElementById('net-play').disabled);
     assert.equal(await page.locator('#net-next').isDisabled(), true);
@@ -135,6 +157,11 @@ const near = (a, b) => assert.ok(Math.abs(a - b) < 1e-4, a + ' ≉ ' + b);
     checks.push('CNN: real layer shapes, ReLU values, step/previous/select/play/pause, automatic stop, probabilities and reset');
 
     await openTopic('resnet');
+    await range('net-strength', 0);
+    assert.deepEqual((await page.locator('#net-after .net-cell').allTextContents()).map(Number), [1, -0.5, 0.75, 0.25]);
+    await range('net-strength', 1.5);
+    assert.deepEqual((await page.locator('#net-after .net-cell').allTextContents()).map(Number), [1.45, -0.605, 0.585, 0.475]);
+    assert.match(await page.locator('[data-net-compare="without"]').innerText(), /0.45/);
     await page.locator('#net-zero').check();
     assert.deepEqual((await page.locator('#net-after .net-cell').allTextContents()).map(Number), [1, -0.5, 0.75, 0.25]);
     const residualWeights = page.locator('.net-weight-matrix').filter({ has: page.locator('.net-mini-label', { hasText: /^w2$/ }) });
@@ -153,6 +180,11 @@ const near = (a, b) => assert.ok(Math.abs(a - b) < 1e-4, a + ' ≉ ' + b);
 
     await openTopic('transformer');
     assert.equal(await page.locator('[data-net-stage]').count(), 11);
+    assert.equal(await page.locator('#net-attention').isVisible(), false, 'future attention is not shown at the input stage');
+    await chooseStage(4);
+    assert.equal(await page.locator('#net-attention').isVisible(), true);
+    assert.equal(await page.locator('.net-weight').count(), 0, 'score stage does not reveal future softmax weights');
+    await page.locator('#net-next').click();
     await page.locator('#net-causal').check();
     assert.deepEqual(await page.locator('.net-weight strong').allTextContents(), ['100.0%', '0.0%', '0.0%']);
     const attentionRows = page.locator('#net-attention .net-matrix-row');
@@ -165,10 +197,17 @@ const near = (a, b) => assert.ok(Math.abs(a - b) < 1e-4, a + ' ≉ ' + b);
     await page.locator('[data-query-index="2"]').click();
     assert.equal(await page.locator('[data-query-index="2"]').getAttribute('aria-pressed'), 'true');
     assert.notDeepEqual(await page.locator('.net-weight strong').allTextContents(), ['100.0%', '0.0%', '0.0%']);
-    await page.locator('[data-net-stage="2"]').click();
+    await chooseStage(6);
+    await page.locator('[data-net-feature="2"]').click();
+    assert.equal(await page.locator('[data-net-feature="2"]').getAttribute('aria-pressed'), 'true');
+    assert.equal(await page.locator('.net-context-trace').isVisible(), true);
+    const defaultAttention = await page.locator('.net-weight strong').allTextContents();
+    await page.locator('[data-net-scenario="contrast"]').click();
+    assert.notDeepEqual(await page.locator('.net-weight strong').allTextContents(), defaultAttention);
+    await chooseStage(2);
     assert.match(await page.locator('#net-before .net-tensor-name').innerText(), /输入/);
     assert.equal(await page.locator('#net-before .net-cell').count(), 12, 'keys are projected from input, not queries');
-    await page.locator('[data-net-stage="3"]').click();
+    await chooseStage(3);
     assert.equal(await page.locator('#net-before .net-cell').count(), 12, 'values are projected from input, not keys');
     await page.locator('#theme-toggle').click();
     assert.equal(await page.locator('html').getAttribute('data-theme'), 'light');
@@ -182,10 +221,37 @@ const near = (a, b) => assert.ok(Math.abs(a - b) < 1e-4, a + ' ≉ ' + b);
     await page.locator('#language').click();
     checks.push('Transformer: causal weights and normalization, query selection, Q/K/V input dependency, theme and route cleanup');
 
+    await openTopic('mlp');
+    const initialLoss = Number(await page.locator('#mlp-loss-value').innerText());
+    const initialBoundary = await page.locator('#mlp-current').evaluate(c => c.toDataURL());
+    await page.locator('#mlp-step').click();
+    assert.equal(await page.locator('#mlp-count').innerText(), '1');
+    assert.ok(Number(await page.locator('#mlp-loss-value').innerText()) < initialLoss);
+    for(let i=0;i<6;i++) await page.locator('#mlp-hundred').click();
+    assert.equal(await page.locator('#mlp-count').innerText(), '601');
+    assert.ok(Number(await page.locator('#mlp-loss-value').innerText()) < initialLoss * .1);
+    assert.notEqual(await page.locator('#mlp-current').evaluate(c => c.toDataURL()), initialBoundary);
+    await page.locator('#mlp-update > summary').click();
+    assert.match(await page.locator('#mlp-update-formula').innerText(), /w_new/);
+    await range('mlp-x', .5);
+    assert.equal(await page.locator('#mlp-x-value').innerText(), '0.5');
+    await page.locator('#language').click();
+    assert.equal(await page.locator('#mlp-count').innerText(), '601');
+    await page.locator('[data-mlp-dataset="linear"]').click();
+    assert.equal(await page.locator('#mlp-count').innerText(), '0');
+    await page.locator('#mlp-play').click();
+    await page.waitForFunction(() => Number(document.getElementById('mlp-count').textContent) >= 5);
+    await openTopic('cnn'); await openTopic('mlp');
+    assert.equal(await page.locator('#mlp-play').getAttribute('aria-pressed'), 'false');
+    assert.match(await page.locator('#python-snippet').innerText(), /def train_step/);
+    await page.locator('#language').click();
+    checks.push('MLP: real loss reduction, changing boundary, weight update inspection, probe, language, dataset reset and playback cleanup');
+
     for (const width of [1440, 1024, 1020, 768, 740, 390, 360, 320]) {
       await page.setViewportSize({ width, height: 1000 });
-      for (const topic of ['fold', 'gradient', 'convolution', 'cnn', 'resnet', 'transformer']) {
+      for (const topic of ['fold', 'gradient', 'convolution', 'cnn', 'resnet', 'transformer', 'mlp']) {
         await openTopic(topic);
+        if (['cnn','resnet','transformer'].includes(topic)) await page.locator('#net-overview > summary').click();
         const overflow = await page.evaluate(() => ({
           viewport: innerWidth, document: document.documentElement.scrollWidth,
           elements: [...document.querySelectorAll('body *')].filter(el => {
@@ -196,7 +262,7 @@ const near = (a, b) => assert.ok(Math.abs(a - b) < 1e-4, a + ' ≉ ' + b);
           width + 'px ' + topic + ' overflow: ' + JSON.stringify(overflow));
       }
     }
-    checks.push('all six lessons fit at 1440 / 1024 / 1020 / 768 / 740 / 390 / 360 / 320px');
+    checks.push('all seven lessons fit at 1440 / 1024 / 1020 / 768 / 740 / 390 / 360 / 320px');
     await page.emulateMedia({ colorScheme: 'dark' });
     if (screenshots) await page.screenshot({ path: path.join(screenshots, 'mobile-dark.png'), fullPage: true });
     const bg = await page.evaluate(() => getComputedStyle(document.body).backgroundColor);
@@ -226,6 +292,9 @@ const near = (a, b) => assert.ok(Math.abs(a - b) < 1e-4, a + ' ≉ ' + b);
       await openTopic('transformer');
       await page.locator('#net-causal').check();
       assert.deepEqual(await page.locator('.net-weight strong').allTextContents(), ['100.0%', '0.0%', '0.0%']);
+      await openTopic('mlp');
+      await page.locator('#mlp-step').click();
+      assert.equal(await page.locator('#mlp-count').innerText(), '1');
       checks.push('CLI-exported copy opens offline with requested topic and language');
     }
     assert.deepEqual(errors, [], 'browser errors');

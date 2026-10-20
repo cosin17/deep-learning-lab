@@ -1,6 +1,6 @@
 ---
 name: deep-learning-lab
-description: Explain deep learning through beginner-friendly interactive experiments, network animations, real numerical calculations, and prediction exercises. Use for space folding (剪窗花), gradients, convolution, CNN, ResNet, Transformer attention, or designing another algorithm visualization. Does not cover production training pipelines or model deployment.
+description: Explain deep learning through beginner-friendly interactive experiments, inspectable network calculations, tiny MLP training, and prediction exercises. Use for space folding (剪窗花), gradients, convolution, CNN, ResNet, Transformer attention, backpropagation, or designing another algorithm visualization. Does not cover production training pipelines or model deployment.
 license: MIT
 ---
 
@@ -18,6 +18,7 @@ For a bundled topic, read only its relevant section in [lessons.md](references/l
 - Layer-by-layer convolutional feature extraction: topic `cnn`.
 - Residual branches, skip connections, or identity mappings: topic `resnet`.
 - Self-attention, token mixing, or causal visibility: topic `transformer`.
+- Backpropagation, weight updates, or a learned decision boundary: topic `mlp`.
 
 Export a portable copy of the lab:
 
@@ -27,7 +28,7 @@ python <skill-dir>/scripts/export_lab.py --output <new-absolute-directory> --top
 
 Use the host's output-location instructions. The script creates a new directory and preserves existing work by refusing an occupied destination. Its output has no runtime package, network, GPU, server, or API-key dependencies. Open the exported `index.html` with the host's file/browser tool when possible, and link to that file.
 
-Network animations use small fixed-weight forward passes, not trained or full-size production models. Explain the simplifications stated in the selected lesson. Start paused and let the learner step through; preserve reduced-motion behavior and stop playback when leaving the lesson.
+CNN/ResNet/Transformer animations use small fixed-weight forward passes. Let the learner inspect one output's actual inputs, and reveal attention results only when its stage is reached. The MLP topic actually trains a 2 → 4 → 1 network on 16 synthetic points; its training loss does not establish generalization. Explain each lesson's stated simplifications. Start paused; preserve reduced-motion behavior and stop playback or training when leaving the lesson.
 
 For learners who want code, use `python/deep_learning_lab.py`, a standard-library implementation of the three foundational models. Run `python <skill-dir>/python/deep_learning_lab.py --topic gradient`; `--help` lists controls and `--json` returns intermediate results. Exported copies include this source. The browser still computes in JavaScript. On-page Python snippets are read-only illustrations; the separate foundational examples are independently runnable and checked against browser results.
 

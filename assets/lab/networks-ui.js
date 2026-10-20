@@ -38,37 +38,50 @@
     if (!copy[topic]) throw new Error('Unknown network topic: ' + topic);
     const t = (zh, en) => tr(lang, zh, en);
     const options = topic === 'resnet' ? '<div class="net-options"><label class="net-toggle"><input id="net-skip" type="checkbox" checked><span class="net-switch" aria-hidden="true"></span><span>' + t('保留捷径 x', 'Keep shortcut x') + '</span></label><label class="net-toggle"><input id="net-zero" type="checkbox"><span class="net-switch" aria-hidden="true"></span><span>' + t('令 F(x) = 0', 'Set F(x) = 0') + '</span></label></div>' : topic === 'transformer' ? '<div class="net-options"><label class="net-toggle"><input id="net-causal" type="checkbox"><span class="net-switch" aria-hidden="true"></span><span>' + t('因果遮罩', 'Causal mask') + '</span></label><p class="net-option-note">' + t('遮住后续位置，比较注意力如何变化。', 'Hide future positions and compare attention.') + '</p></div>' : '';
+    const tools = topic === 'cnn' ? '<div class="net-options net-input-tools"><span>' + t('输入图案', 'Input pattern') + '</span><button class="button" data-net-pattern="default">' + t('默认', 'Default') + '</button><button class="button" data-net-pattern="horizontal">' + t('横线', 'Horizontal') + '</button><button class="button" data-net-pattern="empty">' + t('清空', 'Clear') + '</button><button class="button" id="net-edit-input">' + t('编辑像素', 'Edit pixels') + '</button></div>' : topic === 'resnet' ? '<label class="net-strength-label" for="net-strength">' + t('残差强度 α', 'Residual strength α') + ' <output id="net-strength-value">1</output><input id="net-strength" type="range" min="0" max="2" step="0.1" value="1"></label>' : '<div class="net-options net-input-tools"><span>' + t('手工向量', 'Hand-set vectors') + '</span><button class="button" data-net-scenario="default">' + t('默认', 'Default') + '</button><button class="button" data-net-scenario="contrast">' + t('加强词元 1', 'Strengthen token 1') + '</button><small>' + t('仅改变教学向量，不表示理解句意。', 'Teaching vectors, not learned language understanding.') + '</small></div>';
     return '<section class="hero"><div><p class="eyebrow">' + copy[topic].number + ' / ' + copy[topic].eyebrow + '</p><h2 class="lesson-heading">' + topicCopy(topic, 'title', lang) + '</h2><p class="intro">' + topicCopy(topic, 'intro', lang) + '</p></div><span class="lesson-tag">' + t('逐层动画', 'Layer by layer') + '</span></section>' +
       '<div id="network-lab" class="net-lab" data-network="' + topic + '"><section class="panel net-toolbar" aria-label="' + t('动画控制', 'Animation controls') + '"><div class="net-playback"><button class="button primary" id="net-play" type="button" aria-pressed="false">▶ ' + t('播放', 'Play') + '</button><button class="button" id="net-prev" type="button">← ' + t('上一步', 'Previous') + '</button><button class="button" id="net-next" type="button">' + t('下一步', 'Next') + ' →</button><button class="button" id="net-reset" type="button">↺ ' + t('重置', 'Reset') + '</button></div><p id="net-stage-current" class="net-progress" aria-live="polite"></p>' + options + '</section>' +
-      '<section class="panel net-flow-card" aria-labelledby="net-flow-title"><div class="net-card-head"><h3 id="net-flow-title">' + t('数据正在经过哪些层？', 'Follow the data through the layers') + '</h3><span class="net-subtle">' + t('点击阶段，查看计算', 'Select a stage to inspect') + '</span></div><div class="net-flow"><svg id="net-flow-lines" aria-hidden="true"></svg><div id="net-flow-nodes" class="net-flow-nodes"></div></div><p class="net-flow-note">' + t('序号代表计算顺序；亮色节点是当前层，连接线显示数据前进的路径。', 'Numbers indicate computation order. The highlighted node is the current layer; connectors trace the path forward.') + '</p></section>' +
+      tools + '<details id="net-overview" class="panel net-flow-card"><summary id="net-flow-title">' + t('查看网络总览 / 跳到任意一层', 'Network overview / jump to a layer') + '</summary><div class="net-flow"><svg id="net-flow-lines" aria-hidden="true"></svg><div id="net-flow-nodes" class="net-flow-nodes"></div></div><p class="net-flow-note">' + (topic === 'transformer' ? t('Q、K、V 来自同一输入的并行分支；序号仅用于逐步查看。', 'Q, K and V are parallel projections of one input; numbering is for inspection.') : t('亮色节点是当前层；箭头表示真实的数据依赖。', 'The highlighted node is the current layer; arrows show actual data dependencies.')) + '</p></details>' +
       '<section id="net-residual" class="panel net-extra" hidden></section><section id="net-attention" class="panel net-extra" hidden></section>' +
       '<section class="net-comparison" aria-label="' + t('当前层的输入与输出', 'Current layer input and output') + '"><div class="panel net-tensor-card" id="net-before"></div><div class="panel net-tensor-card net-output" id="net-after"></div></section>' +
       '<section class="panel net-explanation"><div class="net-card-head"><h3 id="net-detail-title"></h3><span id="net-detail-shape" class="net-shape"></span></div><p id="net-detail-description"></p><div id="net-detail-formula" class="net-formula"></div><details class="net-weights"><summary>' + t('查看固定权重与参数（未经训练）', 'Inspect fixed weights and parameters (untrained)') + '</summary><div id="net-weights-grid" class="net-weights-grid"></div></details><p id="net-scope" class="net-scope">' + topicCopy(topic, 'scope', lang) + '</p></section>' +
       '<div class="learning-row"><section class="learning-card"><h3>' + t('先猜一猜，再试一试', 'Predict, then experiment') + '</h3><p>' + topicCopy(topic, 'question', lang) + '</p><details><summary>' + t('查看解释', 'Reveal explanation') + '</summary><p class="answer">' + topicCopy(topic, 'answer', lang) + '</p></details></section><section class="learning-card"><h3>' + t('继续阅读', 'Continue reading') + '</h3><p>' + t('这里演示网络中的核心运算，完整架构请参考原始资料。', 'This demo isolates core operations. Consult the original reference for the complete architecture.') + '</p><div class="reading"><a href="' + copy[topic].citation[0] + '" target="_blank" rel="noopener noreferrer">' + copy[topic].citation[1] + ' ↗</a></div></section></div></div>';
   }
-  function matrixHTML(values, lang, queryIndex) {
+  function matrixHTML(values, lang, queryIndex, options = {}) {
     const rows = !Array.isArray(values) ? [[values]] : !Array.isArray(values[0]) ? [values] : values;
-    const max = Math.max(0.000001, ...rows.flat().filter(Number.isFinite).map(Math.abs));
+    const max = options.max || Math.max(0.000001, ...rows.flat().filter(Number.isFinite).map(Math.abs));
     const columns = Math.max(...rows.map(row => row.length), 1);
-    return '<div class="net-matrix" role="table" aria-label="' + tr(lang, '计算结果，逐行排列', 'Computed values in row order') + '" style="--net-cols:' + columns + '">' + rows.map((row, r) => '<div class="net-matrix-row' + (queryIndex === r ? ' net-query-row' : '') + '" role="row">' + row.map((value, c) => '<span class="net-cell' + (value === null ? ' net-masked' : '') + '" role="cell" title="' + tr(lang, '行 ', 'Row ') + (r + 1) + ', ' + tr(lang, '列 ', 'column ') + (c + 1) + ': ' + fmt(value) + '" style="--net-strength:' + (value === null ? 0 : Math.max(0.05, Math.abs(value) / max) * 0.42) + ';--net-cell-color:var(' + (value < 0 ? '--blue' : '--accent-fill') + ')">' + fmt(value) + '</span>').join('') + '</div>').join('') + '</div>';
+    return '<div class="net-matrix" role="table" aria-label="' + tr(lang, '计算结果，逐行排列', 'Computed values in row order') + '" style="--net-cols:' + columns + '">' + rows.map((row, r) => '<div class="net-matrix-row' + (queryIndex === r ? ' net-query-row' : '') + '" role="row">' + row.map((value, c) => {
+      const key = r + ',' + c;
+      const classes = 'net-cell' + (value === null ? ' net-masked' : '') + ((options.highlight || []).includes(key) ? ' net-source-cell' : '') + ((options.winners || []).includes(key) ? ' net-winner' : '') + (options.selected === key ? ' net-cell-selected' : '');
+      const attributes = ' class="' + classes + '" title="' + tr(lang, '行 ', 'Row ') + (r + 1) + ', ' + tr(lang, '列 ', 'column ') + (c + 1) + ': ' + fmt(value) + '" style="--net-strength:' + (value === null || value === 0 ? 0 : Math.max(0.05, Math.abs(value) / max) * 0.42) + ';--net-cell-color:var(' + (value < 0 ? '--blue' : '--accent-fill') + ')"';
+      return options.interactive ? '<span role="cell" class="net-cell-wrap"><button type="button" data-net-cell="' + key + '" aria-label="' + tr(lang, '检查行 ', 'Inspect row ') + (r + 1) + ', ' + tr(lang, '列 ', 'column ') + (c + 1) + ', ' + fmt(value) + '"' + attributes + '>' + fmt(value) + '</button></span>' : '<span role="cell"' + attributes + '>' + fmt(value) + '</span>';
+    }).join('') + '</div>').join('') + '</div>';
   }
-  function tensorHTML(stage, caption, lang, emptyText) {
+  function tensorHTML(stage, caption, lang, emptyText, options = {}) {
     if (!stage) return '<div class="net-card-head"><h3>' + caption + '</h3></div><div class="net-empty">' + emptyText + '</div>';
-    return '<div class="net-card-head"><h3>' + caption + '</h3><span class="net-shape">' + esc(shape(stage.shape)) + '</span></div><p class="net-tensor-name">' + esc(localized(stage.label, lang)) + '</p>' + matrixHTML(stage.values, lang) + '<p class="net-number-note">' + tr(lang, '数值显示到小数点后 3 位，颜色深浅按本矩阵缩放。', 'Values rounded to 3 decimals; colors scaled within this matrix.') + '</p>';
+    return '<div class="net-card-head"><h3>' + caption + '</h3><span class="net-shape">' + esc(shape(stage.shape)) + '</span></div><p class="net-tensor-name">' + esc(localized(stage.label, lang)) + '</p>' + matrixHTML(stage.values, lang, undefined, options) + '<p class="net-number-note">' + tr(lang, '显示到 3 位小数；本步输入/输出共用色标。', 'Rounded to 3 decimals; this step uses a shared input/output color scale.') + '</p>';
   }
   function mount(container, topic, lang) {
     const root = container.matches && container.matches('#network-lab') ? container : container.querySelector('#network-lab');
     if (!root) throw new Error('Network lab container is missing');
     const $ = id => root.querySelector('#' + id);
     const t = (zh, en) => tr(lang, zh, en);
+    const workbench = document.createElement('div'); workbench.id = 'net-workbench';
+    root.insertBefore(workbench, $('net-residual'));
+    workbench.append(root.querySelector('.net-explanation'), root.querySelector('.net-comparison'));
+    const trace = document.createElement('section'); trace.id = 'net-trace'; trace.className = 'panel net-trace'; trace.hidden = true; workbench.append(trace, $('net-residual'), $('net-attention'));
+    const more = document.createElement('details'); more.className = 'panel net-more'; more.innerHTML = '<summary>' + t('模型范围与固定参数', 'Model scope and fixed parameters') + '</summary>'; more.append(root.querySelector('.net-weights'), $('net-scope')); workbench.append(more);
     const initial = saved[topic] || {};
     let stageIndex = initial.stageIndex || 0, queryIndex = initial.queryIndex || 0, timer = null, destroyed = false, lastIndex = -1;
     let result, skip = initial.skip !== false, zeroResidual = initial.zeroResidual === true, causal = initial.causal === true;
+    let input = initial.input, strength = initial.strength === undefined ? 1 : initial.strength, scenario = initial.scenario || 'default', selected = initial.selected || [0, 0], featureIndex = initial.featureIndex || 0;
+    function remember() { saved[topic] = { stageIndex, queryIndex, skip, zeroResidual, causal, input, strength, scenario, selected, featureIndex }; }
     let reducedMotion = typeof matchMedia === 'function' && matchMedia('(prefers-reduced-motion: reduce)').matches;
     function compute() {
       const model = window.DLNetworks;
       if (!model) throw new Error('DLNetworks is not loaded');
-      result = topic === 'cnn' ? model.cnnForward() : topic === 'resnet' ? model.resnetForward({ skip, zeroResidual }) : model.transformerForward({ causal });
+      result = topic === 'cnn' ? model.cnnForward({ input }) : topic === 'resnet' ? model.resnetForward({ skip, zeroResidual, strength }) : model.transformerForward({ causal, scenario });
       $('net-weights-grid').innerHTML = Object.entries(result.weights).map(([key, value]) => '<div class="net-weight-matrix"><p class="net-mini-label">' + esc(key) + '</p>' + matrixHTML(value, lang) + '</div>').join('');
     }
     function pause() {
@@ -149,10 +162,39 @@
       const node = $('net-residual');
       node.hidden = false;
       node.innerHTML = '<div class="net-card-head"><h3>' + t('两条路径，在这里汇合', 'Two paths meet here') + '</h3><span class="net-shape">' + (skip ? 'y = x + F(x)' : 'y = F(x)') + '</span></div><div class="net-residual-layout"><div class="net-branch' + (!skip ? ' net-branch-off' : '') + '"><span>' + t('捷径：原始输入 x', 'Shortcut: original input x') + (!skip ? ' · ' + t('已关闭', 'off') : '') + '</span><strong>' + esc(input ? input.values.map(fmt).join(', ') : '') + '</strong></div><div class="net-branch"><span>' + t('残差分支 F(x)', 'Residual branch F(x)') + (zeroResidual ? ' = 0' : '') + '</span><strong>' + esc(residual ? residual.values.map(fmt).join(', ') : '') + '</strong></div><span class="net-add" aria-hidden="true">+</span><div class="net-sum"><span>' + t('相加后的 y', 'Added output y') + '</span><strong>' + esc(sum ? sum.values.map(fmt).join(', ') : '') + '</strong></div></div><p class="net-flow-note">' + t('这里的加法直接相加；后续分类头继续处理 y。切换开关可立即对照结果。', 'This node adds the two paths directly; the classification head then processes y. Toggle the switches to compare.') + '</p>';
+      node.querySelector('.net-shape').textContent = (skip ? 'y = x + ' : 'y = ') + fmt(strength) + ' × F(x)';
+      node.querySelectorAll('.net-branch')[1].querySelector('span').textContent = t('缩放后的残差 αF(x)', 'Scaled correction αF(x)');
+      node.querySelectorAll('.net-branch')[1].querySelector('strong').textContent = result.data.scaledResidual.map(fmt).join(', ');
+      node.insertAdjacentHTML('beforeend', '<div class="net-side-compare"><div><span>' + t('同一残差 · 无捷径', 'Same correction · no shortcut') + '</span><strong data-net-compare="without">' + result.data.scaledResidual.map(fmt).join(', ') + '</strong></div><div><span>' + t('同一残差 · 有捷径', 'Same correction · with shortcut') + '</span><strong data-net-compare="with">' + result.data.scaledResidual.map((v,i) => fmt(v + result.input[i])).join(', ') + '</strong></div></div>');
+    }
+    function cnnInspection(current) {
+      if (topic !== 'cnn') return { highlight: [], winners: [] };
+      const r = Math.min(selected[0], (current.shape[0] || 1) - 1), c = Math.min(selected[1], (current.shape[1] || current.shape[0] || 1) - 1);
+      selected = [Math.max(0,r), Math.max(0,c)];
+      const highlight = [], winners = []; let body = '';
+      const heading = '<h3>' + t('这个数，从哪里来？', 'Where did this number come from?') + '</h3>';
+      if (current.id === 'convolution') {
+        const patch = result.data.patches.find(p => p.row === r && p.col === c);
+        patch.terms.forEach(term => highlight.push(term.row + ',' + term.col));
+        body = '<p>' + t('蓝框输出', 'Selected output') + ' (' + (r+1) + ', ' + (c+1) + ')</p><div class="net-products">' + patch.terms.map(term => '<span>' + fmt(term.input) + ' × (' + fmt(term.weight) + ') = ' + fmt(term.product) + '</span>').join('') + '</div><p class="net-trace-result">Σ = ' + fmt(patch.value) + '</p>';
+      } else if (current.id === 'relu') {
+        highlight.push(r + ',' + c);
+        body = '<p class="net-trace-result">max(0, ' + fmt(result.data.convolution[r][c]) + ') = ' + fmt(current.values[r][c]) + '</p>';
+      } else if (current.id === 'pooling') {
+        const window = result.data.poolWindows.find(p => p.row === r && p.col === c);
+        window.entries.forEach((v,i) => { const key = (2*r+Math.floor(i/2)) + ',' + (2*c+i%2); highlight.push(key); if(v === window.value) winners.push(key); });
+        body = '<p class="net-trace-result">max(' + window.entries.map(fmt).join(', ') + ') = ' + fmt(window.value) + '</p><p>' + t('输入的 2 × 2 窗口已描边，橙框标出所有并列最大值。', 'The 2 × 2 input window is outlined; orange outlines mark all tied maxima.') + '</p>';
+      } else if (current.id === 'global-pool') {
+        result.data.pooling.forEach((row,r) => row.forEach((_,c) => highlight.push(r + ',' + c)));
+        body = '<p class="net-trace-result">(' + result.data.pooling.flat().map(fmt).join(' + ') + ') / 9 = ' + fmt(result.data.pooled[0]) + '</p>';
+      }
+      trace.hidden = !body; trace.innerHTML = heading + body;
+      return { highlight, winners };
     }
     function drawAttention() {
       if (topic !== 'transformer') return;
       const node = $('net-attention');
+      if (stageIndex < 4) { node.hidden = true; node.innerHTML = ''; return; }
       const attention = result.stages.find(item => item.id === 'attention');
       if (!attention) return;
       const tokens = result.tokens || attention.values.map((_, i) => 'Token ' + (i + 1));
@@ -160,12 +202,24 @@
       const token = i => localized(tokens[i], lang);
       const row = attention.values[queryIndex];
       node.hidden = false;
-      node.innerHTML = '<div class="net-card-head"><h3>' + t('它在关注谁？', 'Who does this query attend to?') + '</h3><span class="net-shape">' + t('每行权重之和 = 1', 'Each row sums to 1') + '</span></div><div class="net-query-picker" aria-label="' + t('选择 Query 词元', 'Select query token') + '"><span>Query</span>' + tokens.map((_, i) => '<button class="net-token" type="button" data-query-index="' + i + '" aria-pressed="' + (i === queryIndex) + '">' + esc(token(i)) + '</button>').join('') + '</div><div class="net-attention-layout"><div><p class="net-mini-label">' + t('注意力矩阵：行是 Query，列是 Key', 'Attention: Query rows, Key columns') + '</p><div class="net-token-order">' + tokens.map((_, i) => esc(token(i))).join(' · ') + '</div>' + matrixHTML(attention.values, lang, queryIndex) + '</div><div class="net-weight-list"><p class="net-mini-label">' + esc(token(queryIndex)) + ' → ' + t('每个 Key 的权重', 'weight on each key') + '</p>' + row.map((weight, i) => '<div class="net-weight"><span>' + esc(token(i)) + '</span><div class="net-weight-track"><i style="width:' + (Math.max(0, weight) * 100) + '%"></i></div><strong>' + (weight * 100).toFixed(1) + '%</strong></div>').join('') + '</div></div><p class="net-flow-note">' + t('这张观察卡始终显示本次完整前向计算的 attention。高亮行随 Query 选择改变，流程条显示当前播放层。', 'This inspection card shows attention from the complete forward pass. The highlighted row follows your query selection; the pipeline shows the current playback stage.') + '</p>';
+      node.innerHTML = '<div class="net-card-head"><h3>' + t('沿着一个 Query，检查计算', 'Trace one query through the calculation') + '</h3><span class="net-shape">' + (stageIndex >= 5 ? t('每行权重之和 = 1', 'Each row sums to 1') : 'QKᵀ / √2') + '</span></div><div class="net-query-picker" aria-label="' + t('选择 Query 词元', 'Select query token') + '"><span>Query</span>' + tokens.map((_, i) => '<button class="net-token" type="button" data-query-index="' + i + '" aria-pressed="' + (i === queryIndex) + '">' + esc(token(i)) + '</button>').join('') + '</div>';
+      node.insertAdjacentHTML('beforeend', '<div class="net-score-trace">' + result.data.keys.map((key,i) => '<p>Q' + (queryIndex+1) + ' · K' + (i+1) + ' / √2 = (' + key.map((k,j) => fmt(result.data.queries[queryIndex][j]) + ' × ' + fmt(k)).join(' + ') + ') / √2 = ' + fmt(result.data.scores[queryIndex][i]) + (result.data.mask[queryIndex][i] ? ' → ' + t('遮罩：−∞', 'masked: −∞') : '') + '</p>').join('') + '</div>');
+      if (stageIndex >= 5) {
+        node.insertAdjacentHTML('beforeend', '<div class="net-attention-layout"><div><p class="net-mini-label">' + t('行是 Query，列是 Key', 'Query rows, Key columns') + '</p><div class="net-token-order">' + tokens.map((_,i) => esc(token(i))).join(' · ') + '</div>' + matrixHTML(attention.values, lang, queryIndex) + '</div><div class="net-weight-list">' + row.map((weight,i) => '<div class="net-weight"><span>' + esc(token(i)) + '</span><div class="net-weight-track"><i style="width:' + weight*100 + '%"></i></div><strong>' + (weight*100).toFixed(1) + '%</strong></div>').join('') + '</div></div>');
+        const scores = result.data.maskedScores[queryIndex], max = Math.max(...scores.filter(v => v !== null));
+        node.insertAdjacentHTML('beforeend', '<details class="net-softmax"><summary>' + t('查看这一行的 softmax', 'Inspect this row’s softmax') + '</summary><p>' + t('先减去本行最大分数，保持数值稳定：', 'Subtract the row maximum for stability: ') + fmt(max) + '</p><div class="net-formula">' + scores.map((s,i) => s === null ? 'A['+(i+1)+'] = 0 (' + t('已遮罩', 'masked') + ')' : 'A['+(i+1)+'] = exp('+fmt(s)+' − '+fmt(max)+') / Σ exp(s − max) = '+fmt(row[i])).join('\n') + '</div></details>');
+        node.insertAdjacentHTML('beforeend', '<p class="net-number-note">' + t('显示值已舍入；权重归一化使用完整精度。', 'Displayed values are rounded; normalization uses full precision.') + '</p>');
+      } else node.insertAdjacentHTML('beforeend', '<p class="net-flow-note">' + t('此时只有分数。下一步才对每行做 softmax，生成注意力权重。', 'These are scores only. The next step applies row-wise softmax to produce attention weights.') + '</p>');
+      if (stageIndex >= 6) {
+        const products = row.map((w,i) => w * result.data.values[i][featureIndex]);
+        node.insertAdjacentHTML('beforeend', '<div class="net-context-trace"><div class="net-query-picker"><span>' + t('混合哪一维？', 'Which value feature?') + '</span>' + [0,1,2,3].map(i => '<button class="net-token" data-net-feature="'+i+'" aria-pressed="'+(i === featureIndex)+'">'+(i+1)+'</button>').join('') + '</div><div class="net-formula">' + row.map((w,i) => fmt(w) + ' × ' + fmt(result.data.values[i][featureIndex]) + ' = ' + fmt(products[i])).join('\n') + '\nΣ = ' + fmt(result.data.context[queryIndex][featureIndex]) + '</div><p>' + t('权重乘以对应的 V 分量，再相加，得到更新后的这一维。计算使用未舍入数值。', 'Multiply each weight by its V component, then sum. Computation uses unrounded values.') + '</p></div>');
+      }
     }
     function update() {
       if (destroyed) return;
-      saved[topic] = { stageIndex, queryIndex, skip, zeroResidual, causal };
+      remember();
       const focusIndex = document.activeElement && document.activeElement.dataset.netStage;
+      const focusCell = document.activeElement && document.activeElement.dataset.netCell;
       const current = result.stages[stageIndex];
       $('net-stage-current').textContent = (stageIndex + 1) + ' / ' + result.stages.length + ' · ' + localized(current.label, lang) + (stageIndex === result.stages.length - 1 ? ' · ' + t('前向计算完成', 'Forward pass complete') : '');
       $('net-prev').disabled = stageIndex === 0;
@@ -175,23 +229,35 @@
       holder.innerHTML = result.stages.map((stage, i) => '<button type="button" class="net-stage' + (i === stageIndex ? ' net-stage-active' : i < stageIndex ? ' net-stage-done' : '') + '" data-net-stage="' + i + '" aria-current="' + (i === stageIndex ? 'step' : 'false') + '"><span class="net-stage-number">' + String(i + 1).padStart(2, '0') + '</span><strong>' + esc(localized(stage.label, lang)) + '</strong><small>' + esc(shape(stage.shape)) + '</small></button>').join('');
       const parents = parentIds(current.id);
       const source = result.stages.find(item => item.id === parents[0]);
-      $('net-before').innerHTML = tensorHTML(source, t('本层的输入', 'Input to this layer'), lang, t('这是起点。右侧是网络接收的固定输入，点击下一步开始计算。', 'Start here. The network receives the fixed input on the right. Select Next to begin.')) + (parents.length > 1 ? '<p class="net-number-note">' + t('这一步还使用：', 'This operation also uses: ') + parents.slice(1).map(id => esc(localized(result.stages.find(item => item.id === id).label, lang))).join(' + ') + '</p>' : '');
-      $('net-after').innerHTML = tensorHTML(current, t('当前阶段输出', 'Current stage output'), lang);
+      const sources = parents.map(id => result.stages.find(item => item.id === id));
+      const max = Math.max(0.000001, ...[current, ...sources].flatMap(s => [s.values].flat(3)).filter(Number.isFinite).map(Math.abs));
+      const inspection = cnnInspection(current);
+      $('net-before').innerHTML = sources.length ? sources.map((s,i) => tensorHTML(s, i === 0 ? t('本层的输入', 'Input to this layer') : t('另一个输入', 'Another input'), lang, '', {max, ...(i === 0 ? inspection : {})})).join('<hr>') : tensorHTML(source, t('本层的输入', 'Input to this layer'), lang, t('这是起点。右侧是网络的输入；CNN 的格子可直接点击编辑。', 'Start here. The right card holds the input; click CNN pixels to edit them.'));
+      $('net-after').innerHTML = tensorHTML(current, t('当前阶段输出', 'Current stage output'), lang, '', {max, interactive: topic === 'cnn' && ['input','convolution','relu','pooling','global-pool'].includes(current.id), selected: selected.join(',')});
       $('net-detail-title').textContent = localized(current.label, lang);
       $('net-detail-shape').textContent = t('形状 ', 'Shape ') + shape(current.shape);
       $('net-detail-description').textContent = localized(current.description, lang);
       $('net-detail-formula').textContent = current.formula;
+      if (topic === 'cnn') $('net-detail-description').textContent += current.id === 'input' ? t(' 点击 0/1 格子修改输入。', ' Click a 0/1 cell to edit the input.') : t(' 点击输出格子，检查它的来源。', ' Select an output cell to inspect its source.');
+      if ($('net-strength')) { $('net-strength').value = strength; $('net-strength-value').textContent = strength; }
+      root.querySelectorAll('[data-net-scenario]').forEach(b => b.setAttribute('aria-pressed', String(b.dataset.netScenario === scenario)));
       drawResidual(); drawAttention(); layoutFlow(true);
       if (focusIndex !== undefined) holder.querySelector('[data-net-stage="' + focusIndex + '"]').focus({ preventScroll: true });
+      if (focusCell !== undefined) { const cell = $('net-after').querySelector('[data-net-cell="'+focusCell+'"]'); if(cell) cell.focus({preventScroll:true}); }
     }
     function click(event) {
       const target = event.target.closest('button');
       if (!target || !root.contains(target)) return;
       if (target.hasAttribute('data-net-stage')) { move(Number(target.dataset.netStage), true); return; }
-      if (target.hasAttribute('data-query-index')) { queryIndex = Number(target.dataset.queryIndex); saved[topic] = { stageIndex, queryIndex, skip, zeroResidual, causal }; drawAttention(); root.querySelector('[data-query-index="' + queryIndex + '"]').focus({ preventScroll: true }); return; }
+      if (target.hasAttribute('data-query-index')) { queryIndex = Number(target.dataset.queryIndex); remember(); drawAttention(); root.querySelector('[data-query-index="' + queryIndex + '"]').focus({ preventScroll: true }); return; }
+      if (target.hasAttribute('data-net-feature')) { featureIndex = Number(target.dataset.netFeature); remember(); drawAttention(); root.querySelector('[data-net-feature="'+featureIndex+'"]').focus({preventScroll:true}); return; }
+      if (target.hasAttribute('data-net-cell')) { pause(); selected = target.dataset.netCell.split(',').map(Number); if(stageIndex === 0 && topic === 'cnn') { input = result.input.map(row => row.slice()); input[selected[0]][selected[1]] = 1 - input[selected[0]][selected[1]]; compute(); } update(); return; }
+      if (target.id === 'net-edit-input') { move(0, true); return; }
+      if (target.hasAttribute('data-net-pattern')) { pause(); const name = target.dataset.netPattern; input = name === 'default' ? undefined : Array.from({length:8}, (_,r) => Array.from({length:8}, () => name === 'horizontal' && (r === 3 || r === 4) ? 1 : 0)); compute(); selected = [0,0]; update(); return; }
+      if (target.hasAttribute('data-net-scenario')) { pause(); scenario = target.dataset.netScenario; compute(); update(); return; }
       if (target.id === 'net-prev') move(stageIndex - 1, true);
       if (target.id === 'net-next') move(stageIndex + 1, true);
-      if (target.id === 'net-reset') { pause(); stageIndex = 0; queryIndex = 0; skip = true; zeroResidual = false; causal = false; ['net-skip', 'net-zero', 'net-causal'].forEach(id => { if ($(id)) $(id).checked = id === 'net-skip'; }); compute(); lastIndex = -1; update(); }
+      if (target.id === 'net-reset') { pause(); stageIndex = 0; queryIndex = 0; skip = true; zeroResidual = false; causal = false; input = undefined; strength = 1; scenario = 'default'; selected = [0,0]; featureIndex = 0; ['net-skip', 'net-zero', 'net-causal'].forEach(id => { if ($(id)) $(id).checked = id === 'net-skip'; }); compute(); lastIndex = -1; update(); }
       if (target.id === 'net-play') {
         if (timer !== null) { pause(); return; }
         if (stageIndex === result.stages.length - 1) return;
@@ -216,17 +282,21 @@
     if ($('net-causal')) $('net-causal').checked = causal;
     root.addEventListener('click', click);
     root.addEventListener('change', change);
+    function adjust(event) { if(event.target.id !== 'net-strength') return; pause(); strength = Number(event.target.value); compute(); stageIndex = 3; update(); }
+    function toggle() { layoutFlow(false); }
+    root.addEventListener('input', adjust);
+    $('net-overview').addEventListener('toggle', toggle);
     update();
     return {
       redraw: () => { if (!destroyed) layoutFlow(false); },
       pause,
-      destroy: () => { pause(); destroyed = true; root.removeEventListener('click', click); root.removeEventListener('change', change); }
+      destroy: () => { pause(); destroyed = true; root.removeEventListener('click', click); root.removeEventListener('change', change); root.removeEventListener('input', adjust); $('net-overview').removeEventListener('toggle', toggle); }
     };
   }
   function getPython(topic) {
     const snippets = {
       cnn: 'def cnn(image, kernel, classifier):\n    feature = conv2d(image, kernel)\n    feature = relu(feature)\n    pooled = max_pool2d(feature, size=2)\n    summary = mean(pooled)\n    logits = linear([summary], classifier)\n    return softmax(logits)',
-      resnet: 'def residual_block(x, w1, w2, skip=True):\n    hidden = relu(linear(x, w1))\n    residual = linear(hidden, w2)\n    if skip:\n        return x + residual\n    return residual',
+      resnet: 'def residual_block(x, w1, w2, skip=True, alpha=1):\n    hidden = relu(linear(x, w1))\n    residual = alpha * linear(hidden, w2)\n    if skip:\n        return x + residual\n    return residual',
       transformer: 'def attention(x, wq, wk, wv, causal=False):\n    q, k, v = x @ wq, x @ wk, x @ wv\n    scores = q @ k.T / sqrt(q.shape[-1])\n    if causal:\n        scores = mask_future(scores, -inf)\n    weights = softmax(scores, axis=-1)\n    return weights @ v, weights'
     };
     return snippets[topic] || '';

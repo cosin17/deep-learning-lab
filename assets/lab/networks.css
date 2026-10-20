@@ -76,7 +76,67 @@
 .net-lab .learning-card p { font-size: 14px; }
 .net-lab .learning-card h3 { margin-bottom: 10px; }
 .net-lab .learning-card details, .net-lab .reading { font-size: 14px; }
+.net-input-tools { margin: 0 0 16px; padding: 12px 0; border: 0; }
+.net-input-tools small { flex-basis: 100%; font-size: 13px; color: var(--muted); }
+.net-input-tools .button[aria-pressed=true], .mlp-controls .button[aria-pressed=true], .mlp-neurons .button[aria-pressed=true] { background: var(--accent-soft); border-color: var(--accent); color: var(--accent); }
+.net-flow-card { margin: 0 0 16px; }
+.net-flow-card > summary { font-size: 14px; padding: 1px 0; }
+.net-flow-card .net-stage { min-height: 80px; }
+.net-flow-card[open] .net-flow { margin-top: 12px; }
+#net-workbench { min-width: 0; }
+#net-workbench > .net-explanation { margin: 0; }
+.net-more { padding: 16px 18px; margin-top: 16px; font-size: 14px; }
+.net-explanation .net-formula { font-size: 13px; }
+.net-strength-label { display: block; margin: 0 0 17px; color: var(--muted); font-size: 14px; }
+.net-strength-label output { color: var(--accent); float: right; }
+.net-strength-label input { display: block; width: 100%; margin-top: 8px; }
+.net-cell-wrap { display: flex; min-width: 0; }
+button.net-cell { width: 100%; cursor: pointer; }
+.net-cell-selected { outline: 2px solid var(--accent); outline-offset: -2px; }
+.net-source-cell { outline: 2px solid var(--green); outline-offset: -2px; }
+.net-winner { outline: 3px solid var(--blue); outline-offset: -3px; }
+.net-trace { margin-top: 16px; padding: 18px; }
+.net-trace p { margin: 10px 0; }
+.net-products { display: grid; grid-template-columns: repeat(3,minmax(0,1fr)); gap: 7px; }
+.net-products span { padding: 9px 5px; background: var(--code-bg); border-radius: 6px; text-align: center; font: 12px/1.8 Consolas,monospace; overflow-wrap: anywhere; }
+.net-trace-result { font: 15px/1.8 Consolas,monospace !important; color: var(--accent); overflow-wrap: anywhere; }
+.net-score-trace { padding: 10px 13px; margin-bottom: 17px; border-radius: 9px; background: var(--code-bg); }
+.net-score-trace p { font: 12px/1.9 Consolas,monospace; margin: 5px 0; overflow-wrap: anywhere; }
+.net-softmax { margin-top: 18px; font-size: 14px; }
+.net-context-trace { margin-top: 18px; padding-top: 17px; border-top: 1px solid var(--line); }
+.net-context-trace p { color: var(--muted); }
+.net-side-compare { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-top: 17px; }
+.net-side-compare > div { background: var(--code-bg); padding: 12px; border: 1px solid var(--line); border-radius: 9px; min-width: 0; }
+.net-side-compare span { font-size: 13px; color: var(--muted); }
+.net-side-compare strong { display: block; font: 13px/1.9 Consolas,monospace; margin-top: 7px; overflow-wrap: anywhere; }
+#mlp-lab { min-width: 0; }
+#mlp-lab h3 { font-size: 15px; margin: 0 0 15px; font-weight: 600; }
+.mlp-controls, .mlp-inspector, .mlp-plot { padding: 18px; min-width: 0; }
+.mlp-controls .net-options { font-size: 14px; gap: 12px; }
+#mlp-rate { flex: 1 1 140px; min-width: 80px; }
+.mlp-metrics { display: flex; flex-wrap: wrap; gap: 14px 30px; margin-top: 17px; font-size: 14px; color: var(--muted); }
+.mlp-metrics strong { color: var(--accent); font: 17px Consolas,monospace; margin-left: 7px; }
+.mlp-panels { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; margin-top: 16px; }
+.mlp-square { aspect-ratio: 1; }
+.mlp-square canvas { cursor: crosshair; }
+.mlp-legend { font-size: 13px; color: var(--muted); line-height: 1.9; margin: 13px 0 17px; }
+.mlp-loss-wrap { height: 190px; }
+.mlp-inspector { margin-top: 16px; }
+.mlp-inspector p { font-size: 14px; color: var(--muted); overflow-wrap: anywhere; }
+.mlp-probe { display: grid; grid-template-columns: auto minmax(0,1fr) auto minmax(0,1fr); gap: 10px; align-items: center; font-size: 13px; }
+.mlp-probe label { color: var(--muted); }
+.mlp-probe output { color: var(--accent); }
+.mlp-probe input { width: 100%; min-width: 0; }
+.mlp-neurons { display: flex; flex-wrap: wrap; gap: 8px; }
+.mlp-neurons .button { font-size: 13px; }
+#mlp-update { border-top: 1px solid var(--line); padding-top: 16px; font-size: 14px; }
+#mlp-lab .learning-card p { font-size: 14px; }
 @media (max-width: 620px) {
+  .net-side-compare, .mlp-panels { grid-template-columns: 1fr; }
+  .net-products { grid-template-columns: repeat(3,minmax(0,1fr)); gap: 4px; }
+  .net-products span { font-size: 11px; padding: 7px 2px; }
+  .mlp-probe { grid-template-columns: auto minmax(0,1fr); }
+  .mlp-controls, .mlp-inspector, .mlp-plot { padding: 15px; }
   .net-toolbar, .net-flow-card, .net-extra, .net-explanation, .net-tensor-card { padding: 15px; }
   .net-playback { grid-template-columns: repeat(2, minmax(0, 1fr)); }
   .net-comparison, .net-attention-layout { grid-template-columns: 1fr; }

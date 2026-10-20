@@ -1,6 +1,6 @@
 # Add an algorithm without making the skill heavy
 
-Use this reference when a learner requests a concept outside the six bundled lessons, or when a maintainer explicitly asks to extend the skill.
+Use this reference when a learner requests a concept outside the seven bundled lessons, or when a maintainer explicitly asks to extend the skill.
 
 ## Define what a learner can test
 

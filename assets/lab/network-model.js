@@ -60,8 +60,8 @@
     return value;
   }
 
-  function cnnForward() {
-    const input = [
+  function cnnForward(options = {}) {
+    const input = options.input === undefined ? [
       [0, 0, 0, 1, 1, 0, 0, 0],
       [0, 0, 0, 1, 1, 0, 0, 0],
       [0, 0, 1, 1, 1, 0, 0, 0],
@@ -70,7 +70,8 @@
       [0, 0, 1, 1, 1, 0, 0, 0],
       [0, 0, 0, 1, 1, 0, 0, 0],
       [0, 0, 0, 1, 1, 0, 0, 0]
-    ];
+    ] : copy(options.input);
+    if (!Array.isArray(input) || input.length !== 8 || input.some(row => !Array.isArray(row) || row.length !== 8 || row.some(v => !Number.isFinite(v) || v < 0 || v > 1))) throw new RangeError('CNN input must be an 8 × 8 matrix with values from 0 to 1');
     const kernel = [[-1, 0, 1], [-1, 0, 1], [-1, 0, 1]];
     const patches = [];
     // CNN convolution uses cross-correlation: no kernel reversal, stride 1, padding 0.
@@ -137,6 +138,8 @@
   function resnetForward(options = {}) {
     const skip = optionsBoolean(options, 'skip', true);
     const zeroResidual = optionsBoolean(options, 'zeroResidual', false);
+    const strength = options.strength === undefined ? 1 : options.strength;
+    if (!Number.isFinite(strength) || strength < 0 || strength > 2) throw new RangeError('Residual strength must be between 0 and 2');
     const input = [1, -0.5, 0.75, 0.25];
     const w1 = [[0.5, -0.3, 0.2, 0.1], [0.2, 0.4, -0.5, 0.1],
       [-0.1, 0.2, 0.4, -0.2], [0.3, 0.1, -0.2, 0.6]];
@@ -148,7 +151,7 @@
     const preactivation = linear(input, w1, b1);
     const hidden = preactivation.map(relu);
     const residual = linear(hidden, w2, b2);
-    const output = residual.map((value, i) => value + (skip ? input[i] : 0));
+    const output = residual.map((value, i) => strength * value + (skip ? input[i] : 0));
     const head = [[0.4, -0.3], [-0.2, 0.5], [0.3, 0.2], [0.1, -0.2]];
     const headBias = [0, 0];
     const logits = linear(output, head, headBias);
@@ -157,9 +160,9 @@
       id: 'resnet', name: bilingual('ResNet · 学习一个改变量', 'ResNet · Learn a correction'),
       note: bilingual('四维向量的残差块示意，使用固定权重。为直接观察恒等映射，省略加和后的 ReLU；不是完整 ResNet 图像模型。',
         'A fixed-weight residual-block illustration on four features, not a full ResNet image model. Post-addition ReLU is omitted so identity mapping is directly visible.'),
-      options: { skip, zeroResidual }, input, residual, output,
+      options: { skip, zeroResidual, strength }, input, residual, output,
       weights: { w1, b1, w2, b2, head, headBias },
-      data: { input, preactivation, hidden, residual, sum: output, logits, probabilities },
+      data: { input, preactivation, hidden, residual, scaledResidual: residual.map(v => strength * v), sum: output, logits, probabilities },
       stages: [
         stage('input', '输入特征 x', 'Input features x', input,
           '将四个特征送进残差分支，同时沿快捷连接保留一份原始输入。',
@@ -173,9 +176,9 @@
           zeroResidual ? 'Set second-layer weights and biases to zero, so every component of F(x) is exactly zero.' : 'The second layer produces a correction with the input shape; it can increase or decrease each feature.',
           zeroResidual ? 'F(x) = 0' : 'F(x) = hW₂ + b₂'),
         stage('sum', skip ? '快捷连接 · 相加' : '关闭快捷连接', skip ? 'Shortcut · addition' : 'Shortcut disabled', output,
-          skip ? '按分量相加：保留 x，再加上 F(x)。当 F(x) = 0 时，输出精确等于输入。这里省略最终激活。' : '关闭快捷连接后，输出仅为 F(x)，输入无法直接到达输出。这里省略最终激活。',
-          skip ? 'Add component by component: preserve x, then add F(x). When F(x) = 0 the output equals x exactly. Final activation is omitted.' : 'With the shortcut disabled, the output is only F(x); the input has no direct route to the output. Final activation is omitted.',
-          skip ? 'y = x + F(x)' : 'y = F(x)'),
+          skip ? '保留 x，再加上 αF(x)，α = ' + strength + '。α = 0 或 F(x) = 0 时，输出精确等于输入。省略最终激活。' : '关闭捷径后，输出为 αF(x)，α = ' + strength + '。输入无法直接到达输出；省略最终激活。',
+          skip ? 'Preserve x and add αF(x), with α = ' + strength + '. When α or F(x) is zero, the output equals x. Final activation omitted.' : 'Without the shortcut, output is αF(x), with α = ' + strength + '. No direct input path; final activation omitted.',
+          (skip ? 'y = x + ' : 'y = ') + (strength === 1 ? '' : strength + ' × ') + 'F(x)'),
         stage('logits', '线性输出', 'Linear head', logits,
           '用同一组固定输出权重比较有无快捷连接时的分数变化。',
           'Use the same fixed output weights to compare scores with and without the shortcut.', 'z = yWₕ + bₕ'),
@@ -189,8 +192,10 @@
 
   function transformerForward(options = {}) {
     const causal = optionsBoolean(options, 'causal', false);
+    const scenario = options.scenario === undefined ? 'default' : options.scenario;
+    if (!['default', 'contrast'].includes(scenario)) throw new RangeError('Unknown teaching vector scenario');
     const tokens = [bilingual('我', 'I'), bilingual('爱', 'love'), bilingual('学习', 'learning')];
-    const embeddings = [[1, 0, 0.3, 0], [0, 1, 0.3, 0], [0, 0, 1, 0.3]];
+    const embeddings = scenario === 'default' ? [[1, 0, 0.3, 0], [0, 1, 0.3, 0], [0, 0, 1, 0.3]] : [[2.5, 0, 0.3, 0], [0, 0.4, 0.3, 0], [0, 0, 1, 0.3]];
     const positions = [[0, 0.1, 0, -0.1], [0.1, 0, -0.1, 0], [-0.1, 0, 0.1, 0]];
     const input = add(embeddings, positions);
     const wq = [[0.8, 0], [0, 0.8], [0.3, 0.3], [-0.2, 0.2]];
@@ -223,7 +228,7 @@
       id: 'transformer', name: bilingual('Transformer · 让 token 交换信息', 'Transformer · Tokens exchange information'),
       note: bilingual('3 个 token、4 维特征的单头 post-norm 教学块，固定手工权重。不是完整语言模型：不含多头、堆叠、dropout 或训练；因果遮罩仅用于对比信息流。',
         'A single-head, post-norm teaching block with three tokens and four features, using fixed hand-set weights. It is not a complete language model: no multi-head stack, dropout, or training. A causal mask compares information flow.'),
-      options: { causal }, tokens, input, output,
+      options: { causal, scenario }, tokens, input, output,
       weights: { wq, wk, wv, wo, w1, b1, w2, b2, epsilon, gamma: [1, 1, 1, 1], beta: [0, 0, 0, 0] },
       data: { input, embeddings, positions, queries, keys, values, scores, maskedScores, mask,
         attention, context, projection, attentionResidual, normalized, ffnHidden, ffn, ffnResidual, output },
@@ -242,8 +247,8 @@
           '值向量是要被混合的信息。这里值的维度为 4，与查询和键的二维可以不同。',
           'Value vectors hold the information to mix. Their dimension is 4 here, while query and key dimensions are 2.', 'V = XWV'),
         stage('scores', '缩放点积分数', 'Scaled dot-product scores', maskedScores,
-          causal ? 'Q 与 K 点积后除以 √2。因果遮罩把未来位置视为负无穷（显示为 —），softmax 后这些位置权重为 0。' : '每行对应一个查询 token，每列对应一个键 token。点积除以 √2，避免分数随键维度增大而过大。',
-          causal ? 'Divide query-key dot products by √2. The causal mask treats future positions as negative infinity (shown as —), so their softmax weights become 0.' : 'Each row is a query token and each column a key token. Dividing dot products by √2 controls the scale as key dimension grows.',
+          causal ? 'Q 与 K 点积后除以 √2。因果遮罩把未来位置视为负无穷（−∞），softmax 后这些位置权重为 0。' : '每行对应一个查询 token，每列对应一个键 token。点积除以 √2，避免分数随键维度增大而过大。',
+          causal ? 'Divide query-key dot products by √2. The causal mask treats future positions as negative infinity (−∞), so their softmax weights become 0.' : 'Each row is a query token and each column a key token. Dividing dot products by √2 controls the scale as key dimension grows.',
           causal ? 'S = QKᵀ / √2; S[i,j] = −∞ for j > i' : 'S = QKᵀ / √2'),
         stage('attention', '注意力权重', 'Attention weights', attention,
           '逐行做 softmax：每行权重之和为 1。高权重表示该行 token 在本次计算中更多地使用对应列的值向量。',
