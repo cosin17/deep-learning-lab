@@ -17,7 +17,7 @@ def export_lab(output: Path, topic: str = "fold", language: str = "zh") -> Path:
         raise FileExistsError("Destination already exists; choose a new directory: " + str(output))
     skill_root = Path(__file__).resolve().parents[1]
     source = skill_root / "assets" / "lab"
-    names = ("index.html", "style.css", "design.css", "controls.css", "networks.css", "core.js", "network-model.js", "networks-ui.js", "mlp-model.js", "mlp-ui.js", "app.js")
+    names = ("index.html", "style.css", "design.css", "controls.css", "networks.css", "hero.css", "core.js", "network-model.js", "networks-ui.js", "mlp-model.js", "mlp-ui.js", "app.js", "hero.js")
     for name in names:
         if not (source / name).is_file():
             raise FileNotFoundError("Missing lab resource: " + name)

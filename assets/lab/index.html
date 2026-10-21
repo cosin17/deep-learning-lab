@@ -11,27 +11,30 @@
   <link rel="stylesheet" href="design.css">
   <link rel="stylesheet" href="controls.css">
   <link rel="stylesheet" href="networks.css">
+  <link rel="stylesheet" href="hero.css">
   <script defer src="core.js"></script>
   <script defer src="network-model.js"></script>
   <script defer src="networks-ui.js"></script>
   <script defer src="mlp-model.js"></script>
   <script defer src="mlp-ui.js"></script>
   <script defer src="app.js"></script>
+  <script defer src="hero.js"></script>
 </head>
 <body>
   <a class="skip-link" href="#main">跳转到实验 / Skip to experiment</a>
   <header class="site-header">
-    <a class="brand" href="#fold" aria-label="Deep Learning Lab home"><span class="brand-mark" aria-hidden="true"><svg viewBox="0 0 36 36"><path d="M18 3 32 11v14l-14 8L4 25V11Z" fill="none" stroke="currentColor" stroke-width="1.6"/><path d="m11 23 7-12 7 12Z" fill="none" stroke="currentColor" stroke-width="1.8"/><circle cx="18" cy="11" r="2.7" fill="#ffad75"/><circle cx="11" cy="23" r="2.7" fill="#6fa2ff"/><circle cx="25" cy="23" r="2.7" fill="#6fa2ff"/></svg></span><span>Deep Learning <strong>Lab</strong><small id="brand-caption">看见算法，理解学习。</small></span></a>
+    <a class="brand" href="#fold" aria-label="Deep Learning Lab home"><span class="brand-mark" aria-hidden="true"><svg viewBox="0 0 36 36"><path class="brand-orbit" d="M18 3 32 11v14l-14 8L4 25V11Z" fill="none" stroke="currentColor" stroke-width="1.6"/><path d="m11 23 7-12 7 12Z" fill="none" stroke="currentColor" stroke-width="1.8"/><path class="brand-signal" d="m18 11 7 12H11Z" fill="none" stroke="#ffad75" stroke-width="2" pathLength="1"/><circle class="brand-node" cx="18" cy="11" r="2.7" fill="#ffad75"/><circle class="brand-node" cx="11" cy="23" r="2.7" fill="#6fa2ff"/><circle class="brand-node" cx="25" cy="23" r="2.7" fill="#6fa2ff"/></svg></span><span>Deep Learning <strong>Lab</strong><small id="brand-caption">看见算法，理解学习。</small></span></a>
     <nav class="top-nav" aria-label="Sections"><button type="button" id="nav-lab">交互实验</button><button type="button" id="nav-python">Python 示例</button><a href="https://github.com/cosin17/deep-learning-lab" target="_blank" rel="noopener noreferrer">GitHub ↗</a></nav>
     <div class="header-actions"><button id="theme-toggle" class="theme-button" type="button" aria-label="切换为浅色主题">☼</button><button class="language-button" id="language" type="button">English</button></div>
   </header>
   <section class="landing" aria-labelledby="landing-title">
+    <div class="landing-scene" aria-hidden="true"><canvas id="landing-canvas"></canvas><div class="scene-grid"></div></div>
     <p class="open-badge"><span aria-hidden="true"></span><span id="landing-badge">OPEN SOURCE · 为好奇心而造</span></p>
     <h1 id="landing-title">Deep Learning Lab</h1>
     <p class="landing-subtitle" id="landing-subtitle">看见算法，理解深度学习。</p>
     <p class="landing-description" id="landing-description">把抽象的公式，变成可以动手探索的小实验。<br>先观察，再调整，让每一次变化都有迹可循。</p>
-    <div class="agent-command"><span class="command-dollar">CODEX</span><code id="agent-command">$deep-learning-lab 帮我理解神经网络</code><span class="command-cursor" aria-hidden="true"></span></div>
     <div class="landing-actions"><button class="button primary" type="button" id="start-experiment">开始探索 →</button><button class="button" type="button" id="explore-python">查看 Python 示例</button></div>
+    <p class="scene-caption"><i aria-hidden="true"></i><span id="scene-caption">让好奇心，流动起来。</span></p>
     <div class="feature-strip" id="feature-strip"></div>
   </section>
   <div class="lab-section-head"><div><p class="eyebrow">THE PLAYGROUND</p><h2 id="lab-section-title">带着一个问题，开始实验。</h2></div><span class="offline" id="offline-label">离线可用 · 无需 GPU</span></div>

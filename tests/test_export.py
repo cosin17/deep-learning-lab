@@ -21,7 +21,7 @@ class ExportTests(unittest.TestCase):
                     html = entry.read_text(encoding="utf-8")
                     self.assertIn('data-initial-topic="' + topic + '"', html)
                     self.assertIn('data-initial-language="' + language + '"', html)
-                    for name in ("style.css", "design.css", "controls.css", "networks.css", "core.js", "network-model.js", "networks-ui.js", "mlp-model.js", "mlp-ui.js", "app.js", "LICENSE", "python/deep_learning_lab.py"):
+                    for name in ("style.css", "design.css", "controls.css", "networks.css", "hero.css", "core.js", "network-model.js", "networks-ui.js", "mlp-model.js", "mlp-ui.js", "app.js", "hero.js", "LICENSE", "python/deep_learning_lab.py"):
                         self.assertTrue((destination / name).is_file(), name)
                     self.assertEqual((destination / "core.js").read_bytes(), (ROOT / "assets" / "lab" / "core.js").read_bytes())
 

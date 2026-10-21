@@ -63,7 +63,6 @@
     $('landing-subtitle').textContent = tr('看见算法，理解深度学习。', 'Make deep learning click.');
     $('landing-description').innerHTML = tr('把抽象的公式，变成可以动手探索的小实验。<br>先观察，再调整，让每一次变化都有迹可循。',
       'Turn abstract equations into little experiments you can explore.<br>Make a prediction. Change one thing. Follow the math.');
-    $('agent-command').textContent = tr('$deep-learning-lab 帮我理解神经网络', '$deep-learning-lab help me understand neural networks');
     $('start-experiment').textContent = tr('开始探索 →', 'Start exploring →');
     $('explore-python').textContent = tr('查看 Python 示例', 'Explore Python');
     $('lab-section-title').textContent = tr('带着一个问题，开始实验。', 'Bring a question. Find an answer.');
