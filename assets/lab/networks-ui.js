@@ -69,7 +69,11 @@
     const t = (zh, en) => tr(lang, zh, en);
     const workbench = document.createElement('div'); workbench.id = 'net-workbench';
     root.insertBefore(workbench, $('net-residual'));
+    const process = document.createElement('section'); process.className = 'panel net-process';
+    process.innerHTML = '<div class="net-process-head"><div><p class="eyebrow">' + t('看见计算过程', 'FOLLOW THE COMPUTATION') + '</p><h3 id="net-process-title"></h3></div><button type="button" class="button" id="net-process-replay" aria-pressed="false">' + t('↺ 重播本层', '↺ Replay layer') + '</button></div><canvas id="net-process-canvas" role="img" aria-describedby="net-process-caption"></canvas><p id="net-process-caption" class="net-process-caption"></p><span class="net-process-status"></span>';
+    workbench.append(process);
     workbench.append(root.querySelector('.net-explanation'), root.querySelector('.net-comparison'));
+    const motion = window.DLNetworkMotion.mount(process, lang);
     const trace = document.createElement('section'); trace.id = 'net-trace'; trace.className = 'panel net-trace'; trace.hidden = true; workbench.append(trace, $('net-residual'), $('net-attention'));
     const more = document.createElement('details'); more.className = 'panel net-more'; more.innerHTML = '<summary>' + t('模型范围与固定参数', 'Model scope and fixed parameters') + '</summary>'; more.append(root.querySelector('.net-weights'), $('net-scope')); workbench.append(more);
     const initial = saved[topic] || {};
@@ -77,7 +81,14 @@
     let result, skip = initial.skip !== false, zeroResidual = initial.zeroResidual === true, causal = initial.causal === true;
     let input = initial.input, strength = initial.strength === undefined ? 1 : initial.strength, scenario = initial.scenario || 'default', selected = initial.selected || [0, 0], featureIndex = initial.featureIndex || 0;
     function remember() { saved[topic] = { stageIndex, queryIndex, skip, zeroResidual, causal, input, strength, scenario, selected, featureIndex }; }
-    let reducedMotion = typeof matchMedia === 'function' && matchMedia('(prefers-reduced-motion: reduce)').matches;
+    const motionMedia = matchMedia('(prefers-reduced-motion: reduce)');
+    let reducedMotion = motionMedia.matches, transitions = [];
+    function stopTransitions() { transitions.forEach(animation => animation.cancel()); transitions = []; }
+    function motionChange() {
+      reducedMotion = motionMedia.matches;
+      if (reducedMotion) { stopTransitions(); root.querySelectorAll('.net-flow-dot').forEach(dot => dot.remove()); }
+    }
+    motionMedia.addEventListener('change', motionChange);
     function compute() {
       const model = window.DLNetworks;
       if (!model) throw new Error('DLNetworks is not loaded');
@@ -85,16 +96,44 @@
       $('net-weights-grid').innerHTML = Object.entries(result.weights).map(([key, value]) => '<div class="net-weight-matrix"><p class="net-mini-label">' + esc(key) + '</p>' + matrixHTML(value, lang) + '</div>').join('');
     }
     function pause() {
-      if (timer !== null) clearInterval(timer);
+      if (timer !== null) clearTimeout(timer);
       timer = null;
+      motion.pause();
       if (!destroyed) { $('net-play').textContent = '▶ ' + t('播放', 'Play'); $('net-play').setAttribute('aria-pressed', 'false'); }
     }
     function move(index, manual) {
       if (manual) pause();
+      stopTransitions();
       lastIndex = stageIndex;
       stageIndex = Math.max(0, Math.min(result.stages.length - 1, index));
+      const changed = stageIndex !== lastIndex;
+      const direction = stageIndex >= lastIndex ? 1 : -1;
       update();
+      if (changed && !reducedMotion) {
+        const arrive = (element, distance, delay = 0) => transitions.push(element.animate([
+          { opacity: .25, transform: 'translateX(' + (distance * direction) + 'px)' },
+          { opacity: 1, transform: 'translateX(0)' }
+        ], { duration: 440, delay, easing: 'cubic-bezier(.22, 1, .36, 1)', fill: 'backwards' }));
+        arrive($('net-before'), -8);
+        $('net-after').querySelectorAll('.net-matrix-row').forEach((row, i) => arrive(row, 10, 70 + i * 22));
+        transitions.push($('net-after').animate([
+          { boxShadow: '0 0 0 1px var(--accent), 0 0 28px var(--accent-soft)' },
+          { boxShadow: '0 0 0 0 transparent' }
+        ], { duration: 850, easing: 'ease-out' }));
+      }
       if (stageIndex === result.stages.length - 1) pause();
+      if (changed) motion.play(stageDuration());
+    }
+    function stageDuration() {
+      const id = result.stages[stageIndex].id;
+      if (topic === 'cnn') return ({ convolution: 5400, relu: 3600, pooling: 3000 })[id] || 1600;
+      return ['sum', 'scores', 'attention', 'context'].includes(id) ? 3200 : 1600;
+    }
+    function schedule() {
+      timer = setTimeout(() => {
+        move(stageIndex + 1, false);
+        if (stageIndex < result.stages.length - 1) schedule();
+      }, stageDuration() + 250);
     }
     function parentIds(id) {
       if (topic === 'transformer') return ({ input: [], queries: ['input'], keys: ['input'], values: ['input'], scores: ['queries', 'keys'], attention: ['scores'], context: ['attention', 'values'], projection: ['context'], 'residual-norm': ['projection', 'input'], ffn: ['residual-norm'], output: ['ffn', 'residual-norm'] })[id] || [];
@@ -135,7 +174,7 @@
             d = 'M ' + ax + ' ' + y1 + ' C ' + ax + ' ' + middle + ' ' + bx + ' ' + middle + ' ' + bx + ' ' + y2;
           }
           lines += '<path class="net-connector' + (shortcut ? ' net-shortcut-line' : '') + (i <= stageIndex ? ' net-connector-done' : '') + '" d="' + d + '" marker-end="url(#net-arrow-' + topic + ')"/>';
-          if (animate && !reducedMotion && lastIndex !== stageIndex && i === stageIndex) lines += '<circle class="net-flow-dot" r="4"><animateMotion dur=".8s" repeatCount="1" fill="freeze" path="' + d + '"/></circle>';
+          if (animate && !reducedMotion && lastIndex !== stageIndex && i === stageIndex) lines += '<circle class="net-flow-dot" r="4" opacity="0"><animateMotion dur=".76s" calcMode="spline" keyTimes="0;1" keySplines=".22 .7 .3 1" path="' + d + '"/><animate attributeName="opacity" values="0;1;1;0" keyTimes="0;.12;.8;1" dur=".76s"/></circle>';
         });
       });
       svg.innerHTML = lines;
@@ -221,6 +260,7 @@
       const focusIndex = document.activeElement && document.activeElement.dataset.netStage;
       const focusCell = document.activeElement && document.activeElement.dataset.netCell;
       const current = result.stages[stageIndex];
+      root.style.setProperty('--net-completion', (stageIndex + 1) / result.stages.length);
       $('net-stage-current').textContent = (stageIndex + 1) + ' / ' + result.stages.length + ' · ' + localized(current.label, lang) + (stageIndex === result.stages.length - 1 ? ' · ' + t('前向计算完成', 'Forward pass complete') : '');
       $('net-prev').disabled = stageIndex === 0;
       $('net-next').disabled = stageIndex === result.stages.length - 1;
@@ -242,15 +282,23 @@
       if ($('net-strength')) { $('net-strength').value = strength; $('net-strength-value').textContent = strength; }
       root.querySelectorAll('[data-net-scenario]').forEach(b => b.setAttribute('aria-pressed', String(b.dataset.netScenario === scenario)));
       drawResidual(); drawAttention(); layoutFlow(true);
+      updateMotion();
       if (focusIndex !== undefined) holder.querySelector('[data-net-stage="' + focusIndex + '"]').focus({ preventScroll: true });
       if (focusCell !== undefined) { const cell = $('net-after').querySelector('[data-net-cell="'+focusCell+'"]'); if(cell) cell.focus({preventScroll:true}); }
+      lastIndex = stageIndex;
+    }
+    function updateMotion() {
+      const current = result.stages[stageIndex];
+      const sources = parentIds(current.id).map(id => result.stages.find(stage => stage.id === id));
+      motion.update({ result, stageIndex, current, sources, queryIndex, featureIndex, selected });
     }
     function click(event) {
       const target = event.target.closest('button');
       if (!target || !root.contains(target)) return;
       if (target.hasAttribute('data-net-stage')) { move(Number(target.dataset.netStage), true); return; }
-      if (target.hasAttribute('data-query-index')) { queryIndex = Number(target.dataset.queryIndex); remember(); drawAttention(); root.querySelector('[data-query-index="' + queryIndex + '"]').focus({ preventScroll: true }); return; }
-      if (target.hasAttribute('data-net-feature')) { featureIndex = Number(target.dataset.netFeature); remember(); drawAttention(); root.querySelector('[data-net-feature="'+featureIndex+'"]').focus({preventScroll:true}); return; }
+      if (target.id === 'net-process-replay') { const active = motion.isPlaying(); pause(); if (!active) motion.play(stageDuration()); return; }
+      if (target.hasAttribute('data-query-index')) { pause(); queryIndex = Number(target.dataset.queryIndex); remember(); drawAttention(); updateMotion(); root.querySelector('[data-query-index="' + queryIndex + '"]').focus({ preventScroll: true }); return; }
+      if (target.hasAttribute('data-net-feature')) { pause(); featureIndex = Number(target.dataset.netFeature); remember(); drawAttention(); updateMotion(); root.querySelector('[data-net-feature="'+featureIndex+'"]').focus({preventScroll:true}); return; }
       if (target.hasAttribute('data-net-cell')) { pause(); selected = target.dataset.netCell.split(',').map(Number); if(stageIndex === 0 && topic === 'cnn') { input = result.input.map(row => row.slice()); input[selected[0]][selected[1]] = 1 - input[selected[0]][selected[1]]; compute(); } update(); return; }
       if (target.id === 'net-edit-input') { move(0, true); return; }
       if (target.hasAttribute('data-net-pattern')) { pause(); const name = target.dataset.netPattern; input = name === 'default' ? undefined : Array.from({length:8}, (_,r) => Array.from({length:8}, () => name === 'horizontal' && (r === 3 || r === 4) ? 1 : 0)); compute(); selected = [0,0]; update(); return; }
@@ -262,7 +310,8 @@
         if (timer !== null) { pause(); return; }
         if (stageIndex === result.stages.length - 1) return;
         target.textContent = 'Ⅱ ' + t('暂停', 'Pause'); target.setAttribute('aria-pressed', 'true');
-        timer = setInterval(() => move(stageIndex + 1, false), 1550);
+        move(stageIndex + 1, false);
+        if (stageIndex < result.stages.length - 1) schedule();
       }
     }
     function change(event) {
@@ -288,9 +337,9 @@
     $('net-overview').addEventListener('toggle', toggle);
     update();
     return {
-      redraw: () => { if (!destroyed) layoutFlow(false); },
+      redraw: () => { if (!destroyed) { layoutFlow(false); motion.redraw(); } },
       pause,
-      destroy: () => { pause(); destroyed = true; root.removeEventListener('click', click); root.removeEventListener('change', change); root.removeEventListener('input', adjust); $('net-overview').removeEventListener('toggle', toggle); }
+      destroy: () => { pause(); stopTransitions(); motion.destroy(); destroyed = true; motionMedia.removeEventListener('change', motionChange); root.removeEventListener('click', click); root.removeEventListener('change', change); root.removeEventListener('input', adjust); $('net-overview').removeEventListener('toggle', toggle); }
     };
   }
   function getPython(topic) {

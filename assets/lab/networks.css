@@ -5,7 +5,10 @@
 .net-toolbar { padding: 17px 18px; margin-bottom: 16px; }
 .net-playback { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 9px; }
 .net-playback .button { min-height: 42px; padding: 8px 9px; white-space: normal; font-size: 14px; }
-.net-progress { margin: 12px 0 0; color: var(--accent); font-variant-numeric: tabular-nums; }
+.net-progress { position: relative; margin: 12px 0 0; padding-bottom: 12px; color: var(--accent); font-variant-numeric: tabular-nums; }
+.net-progress::before, .net-progress::after { content: ''; position: absolute; bottom: 0; left: 0; height: 3px; border-radius: 3px; }
+.net-progress::before { width: 100%; background: var(--line); }
+.net-progress::after { width: calc(var(--net-completion, 0) * 100%); background: linear-gradient(90deg, var(--accent-fill), var(--green)); }
 .net-options { display: flex; flex-wrap: wrap; align-items: center; gap: 15px 24px; margin-top: 14px; padding-top: 14px; border-top: 1px solid var(--line); }
 .net-toggle { display: inline-flex; gap: 9px; align-items: center; position: relative; cursor: pointer; font-size: 14px; min-height: 32px; }
 .net-toggle input { position: absolute; width: 38px; height: 23px; margin: 0; opacity: 0; left: 0; z-index: 1; }
@@ -84,6 +87,14 @@
 .net-flow-card .net-stage { min-height: 80px; }
 .net-flow-card[open] .net-flow { margin-top: 12px; }
 #net-workbench { min-width: 0; }
+.net-process { padding: 22px; margin-bottom: 16px; overflow: hidden; background: radial-gradient(ellipse at 50% 20%, var(--accent-soft), transparent 75%), var(--glass); }
+.net-process-head { display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 12px; }
+.net-process-head .eyebrow { font-size: 10px; margin: 0 0 5px; }
+.net-process-head .button { min-height: 38px; font-size: 12px; }
+#net-process-canvas { width: 100%; height: auto; display: block; margin: 14px auto 8px; aspect-ratio: 3 / 1; }
+.net-process-caption { margin: 0; color: var(--ink); font-size: 13px !important; min-height: 25px; overflow-wrap: anywhere; }
+.net-process-status { display: block; margin-top: 8px; color: var(--green); font-size: 11px; }
+@media (max-width: 620px) { .net-process { padding: 16px; } .net-process-head .button { min-height: 42px; } }
 #net-workbench > .net-explanation { margin: 0; }
 .net-more { padding: 16px 18px; margin-top: 16px; font-size: 14px; }
 .net-explanation .net-formula { font-size: 13px; }
@@ -151,6 +162,7 @@ button.net-cell { width: 100%; cursor: pointer; }
   .net-branch span, .net-sum span { font-size: 13px; }
 }
 @media (prefers-reduced-motion: no-preference) {
+  .net-progress::after { transition: width .6s cubic-bezier(.22, 1, .36, 1); }
   .net-switch::after { transition: margin-left .15s; }
   .net-weight-track i { transition: width .25s; }
   .net-stage { transition: background .15s, border-color .15s; }
